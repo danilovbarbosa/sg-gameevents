@@ -5,8 +5,10 @@ Created on 14 Oct 2015
 '''
 
 from sqlalchemy import *
-from base import Base
+
 from sqlalchemy.orm import relationship
+
+from base import Base
 
 ########################################################################
 class GamingSession(Base):

@@ -5,17 +5,13 @@ from sqlalchemy import create_engine, ForeignKey
 from sqlalchemy import Column, Date, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import scoped_session, create_session
 from base import Base
 from entities import *
+import db
 
-engine = create_engine('sqlite:///gamingsession_test.db', echo=False)
- 
-# create a Session
-DbSession = sessionmaker(bind=engine)
-dbsession = DbSession()
+global engine 
 
-
-        
 ########################################################################
 class GameEvents(object):
     def __init__ (self):        
@@ -31,13 +27,16 @@ class GameEvents(object):
         self.logger = logging.getLogger(__name__)
         
         self._lastInsertedId = None
-
+        
+        
+        self.dbsession = scoped_session(lambda: create_session(bind=engine))
+        
         
         
     def startgamingsession(self):
         new_gamingsession = GamingSession()
-        dbsession.add(new_gamingsession)
-        dbsession.commit()
+        self.dbsession.add(new_gamingsession)
+        self.dbsession.commit()
         self._lastInsertedId = new_gamingsession.id 
         return self._lastInsertedId 
     
@@ -51,7 +50,7 @@ class GameEvents(object):
         return False
     
     def getgamingsessionstatus(self, sid):
-        query = dbsession.query(GamingSession).filter(GamingSession.id == sid)
+        query = self.dbsession.query(GamingSession).filter(GamingSession.id == sid)
         res = query.all()
         if res and len(res) >= 1:
             return res[0].status
@@ -64,6 +63,3 @@ class GameEvents(object):
     def __getlastgamingsessionid(self):
         return self._lastInsertedId
         
-if __name__ == '__main__':
-    Base.metadata.create_all(engine, checkfirst=True)
-    print("I'm in the main!")

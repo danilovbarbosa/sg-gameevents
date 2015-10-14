@@ -4,16 +4,17 @@ Created on 13 Oct 2015
 @author: mbrandaoca
 '''
 from flask import Flask, jsonify, request, abort
+from flask import current_app, Blueprint, render_template
 from flask.ext.api import status 
 from flask.helpers import make_response
 import datetime
 import json
+from db import *
 
 import gameevents
 
-app = Flask(__name__)
 
-
+app = Blueprint('app', __name__, url_prefix='/')
 
 @app.route('/gameevents/api/v1.0/initsession', methods=['POST'])
 def initsession():
@@ -54,7 +55,12 @@ def commitevent():
         return jsonify({'gamevent': gamevent}), status.HTTP_201_CREATED
 
 
+def create_app(uri):
+    app = Flask(__name__)    
+    import db
+    engine = db.init_engine(uri)
+    db.init_db()
+    return app
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
     

@@ -1,32 +1,48 @@
 import unittest
 import datetime
 
+import os
+
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import Session
 
 from base import Base
-from entities import *
-from gameevents import *
+from gameevents import GameEvents
+
+import entities
+
+import db
+from config.test import *
+
+from app import create_app
+from db import *
+
+#engine = None
 
 class TestGameEvents(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        print("Setting up test, creating database.") 
-        self.engine = create_engine('sqlite:///gamingsession_test.db', echo=False)
-        self.session = Session(self.engine)
-        Base.metadata.create_all(self.engine)    
-        
+        #self.app = create_app(SQLALCHEMY_DATABASE_URI)
+        print("Setting up test, creating database at %s." % SQLALCHEMY_DATABASE_URI) 
+        db.init_engine(SQLALCHEMY_DATABASE_URI)
+        db.init_db()
+        #Base.metadata.create_all(bind=engine)
+        #Base.metadata.create_all(engine)
+        session = db.get_session()
+        #print(session)
+        #print('Created database, now adding one entry.') 
         #Add one record
-        new_gamingsession = GamingSession()
-        dbsession.add(new_gamingsession)
-        dbsession.commit()
+        new_gamingsession = entities.GamingSession()
+        session.add(new_gamingsession)
+        session.commit()
 
     
     @classmethod
     def tearDownClass(self):
         print("Tearing down database.") 
-        Base.metadata.drop_all(self.engine)
+        #engine = db.init_engine(SQLALCHEMY_DATABASE_URI)
+        #Base.metadata.drop_all(bind=engine)
         
         
     def test_startgamingsession(self):
