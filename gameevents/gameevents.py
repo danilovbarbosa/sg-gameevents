@@ -1,110 +1,69 @@
-'''
-Created on 13 Oct 2015
-
-@author: mbrandaoca
-'''
-from flask import Flask, jsonify, request, abort
-from flask.ext.api import status 
 import logging
-import datetime
-from flask.helpers import make_response
-import json
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, ForeignKey
+from sqlalchemy import Column, Date, Integer, String, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, backref
+from base import Base
+from entities import *
 
-app = Flask(__name__)
-
-sessions = []
-
-events = [
-    {
-        'sessionid': 1,
-        'title': u'My Title',
-        'description': u'My Description',
-    }
-]
-
-'''
-@app.route('/gameevents/api/v1.0/sessions', methods=['GET'])
-def get_sessions():
-    return jsonify({'sessions': sessions})
+engine = create_engine('sqlite:///gamingsession_test.db', echo=False)
+ 
+# create a Session
+DbSession = sessionmaker(bind=engine)
+dbsession = DbSession()
 
 
-@app.route('/gameevents/api/v1.0/events', methods=['GET'])
-def get_events():
-    return jsonify({'events': events})
-
+        
+########################################################################
+class GameEvents(object):
+    def __init__ (self):        
+        self.sessions = []
     
-@app.route('/gameevents/api/v1.0/events', methods=['POST'])
-def send_event():
-    if not request.json or not 'title' in request.json:
-        abort(400)
-    event = {
-        'sessionid': sessions[-1]['id'] + 1,
-        'title': request.json['title'],
-        'description': request.json.get('description', "")
-    }
-    events.append(event)
-    return jsonify({'event': event}), 201
-    '''
+        self.events = [
+                    {
+                        'sessionid': 1,
+                        'title': u'My Title',
+                        'description': u'My Description',
+                    }
+                ]
+        self.logger = logging.getLogger(__name__)
+        
+        self._lastInsertedId = None
 
-@app.route('/gameevents/api/v1.0/initsession', methods=['POST'])
-def initsession():
-    if not request.json or not 'id' in request.json:
-        abort(status.HTTP_400_BAD_REQUEST)
-    gamingsession = {
-        'id': request.json['id'],
-        'timestamp': str(datetime.datetime.now()),
-        'status':'active'
-    }
-    startrecording(gamingsession)
-    return jsonify({'gamingsession': gamingsession}), status.HTTP_200_OK
-
-@app.route('/gameevents/api/v1.0/endsession', methods=['POST'])
-def endsession():
-    if not request.json or not 'id' in request.json:
-        abort(status.HTTP_400_BAD_REQUEST)
-    #gamingsession = (item for item in sessions if item["id"] == request.json['id']).next()
-    gamingsession = next((item for item in sessions if item["id"] == request.json['id']), None)
-    if finishrecording(gamingsession):
-        return jsonify({'gamingsession': gamingsession}), status.HTTP_200_OK
-    else:
-        resp = make_response(json.dumps({'error': 'No such session.'}), status.HTTP_405_METHOD_NOT_ALLOWED)
-        h = resp.headers
-        h['Access-Control-Allow-Methods'] = 'initsession'        
-        return resp
-
-@app.route('/gameevents/api/v1.0/commitevent', methods=['POST'])
-def commitevent():
-    if not request.json or not 'sessionid' in request.json:
-        abort(status.HTTP_400_BAD_REQUEST)
-    gamevent = {
-        'sessionid': request.json['sessionid'],
-        'timestamp': str(datetime.datetime.now()),
-        'gameevent': request.json['gameevent']
-    }
-    if recordgameevent(gamevent):
-        return jsonify({'gamevent': gamevent}), status.HTTP_201_CREATED
-
-def startrecording(gs):
-    logging.info("Started recording a gaming session at %s" % gs['timestamp'])
-    sessions.append(gs)
-    return True
-
-def finishrecording(gs):
-    if gs:
-        if gs["status"] == "active":
-            gs["status"] = "inactive"
-            logging.info("Finished recording a gaming session at %s" % gs['timestamp'])
-            return True
-        else:
-            logging.info("No active session found")
-            return False
-    else:
-        logging.info("No such session found")
+        
+        
+    def startgamingsession(self):
+        new_gamingsession = GamingSession()
+        dbsession.add(new_gamingsession)
+        dbsession.commit()
+        self._lastInsertedId = new_gamingsession.id 
+        return self._lastInsertedId 
+    
+    def finishgamingsession(self, sessionid):
         return False
     
-def recordgameevent(gameevent):
-    logging.info("Received game event for sessionid %s" % gameevent['sessionid'])
-
+    def recordgameevent(self, sessionid, gameevent):
+        return False
+    
+    def getgameevents(self, sessionid):
+        return False
+    
+    def getgamingsessionstatus(self, sid):
+        query = dbsession.query(GamingSession).filter(GamingSession.id == sid)
+        res = query.all()
+        if res and len(res) >= 1:
+            return res[0].status
+        else:
+            return False
+    
+    def __inactivategamingsession(self, sessionid):
+        return False
+    
+    def __getlastgamingsessionid(self):
+        return self._lastInsertedId
+        
 if __name__ == '__main__':
-    app.run(debug=True)
-    logging.getLogger(__name__)
+    Base.metadata.create_all(engine, checkfirst=True)
+    print("I'm in the main!")
