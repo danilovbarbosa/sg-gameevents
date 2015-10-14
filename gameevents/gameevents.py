@@ -4,7 +4,7 @@ Created on 13 Oct 2015
 @author: mbrandaoca
 '''
 from flask import Flask, jsonify, request, abort
-from flask.ext.api import status
+from flask.ext.api import status 
 import logging
 import datetime
 from flask.helpers import make_response
@@ -81,12 +81,13 @@ def commitevent():
         'timestamp': str(datetime.datetime.now()),
         'gameevent': request.json['gameevent']
     }
-    recordgameevent(gamevent)
-    return jsonify({'gamevent': gamevent}), status.HTTP_201_CREATED
+    if recordgameevent(gamevent):
+        return jsonify({'gamevent': gamevent}), status.HTTP_201_CREATED
 
 def startrecording(gs):
     logging.info("Started recording a gaming session at %s" % gs['timestamp'])
     sessions.append(gs)
+    return True
 
 def finishrecording(gs):
     if gs:
