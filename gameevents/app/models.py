@@ -15,7 +15,7 @@ class GamingSession(db.Model):
     #----------------------------------------------------------------------
     def __init__(self):
         """"""
-        self.status = 1
+        self.status = True
         
     def __repr__(self):
         return '<GameSession, Id %r>' % (self.id)
