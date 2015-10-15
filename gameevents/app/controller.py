@@ -7,7 +7,7 @@ Created on 15 Oct 2015
 from app import db, models
 
 from app.errors import SessionNotActive
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import NoResultFound 
 
 
 def startgamingsession():
@@ -20,8 +20,8 @@ def startgamingsession():
         return new_gamingsession.id
     except Exception as e:
         app.logger.warning(e)
-        db_session.rollback()
-        db_session.flush() # for resetting non-commited .add()
+        db.session.rollback()
+        db.session.flush() # for resetting non-commited .add()
         return False
 
 
@@ -33,10 +33,7 @@ def getgamingsessionstatus(sessionid):
     except NoResultFound as e:
         raise NoResultFound('This gaming session ID does not exist.') 
         
-    #if res and len(res) >= 1:
-    #    return res[0].status
-    #else:
-    #    raise errors.RecordNotFound('This session ID does not exist.')
+
     
 def isexistinggamingsession(sessionid):
     query = db.session.query(models.GamingSession).filter(models.GamingSession.id == sessionid)
@@ -72,8 +69,8 @@ def recordgameevent(sessionid, gameevent):
                 successful = True
             except Exception as e:
                 app.logger.warning(e)
-                db_session.rollback()
-                db_session.flush() # for resetting non-commited .add()
+                db.session.rollback()
+                db.session.flush() # for resetting non-commited .add()
                 successful = False
             return successful
     
