@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import Session
 from base import Base
 from gameevents import GameEvents
 
-import entities
+import models
 
 import db
 from config.test import *
@@ -33,7 +33,7 @@ class TestGameEvents(unittest.TestCase):
         #print(session)
         #print('Created database, now adding one entry.') 
         #Add one record
-        new_gamingsession = entities.GamingSession()
+        new_gamingsession = models.GamingSession()
         session.add(new_gamingsession)
         session.commit()
 
