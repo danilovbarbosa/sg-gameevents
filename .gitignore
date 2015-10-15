@@ -64,3 +64,6 @@ db_repository/
 
 #TMP folder
 tmp/
+
+#Eclipse Pydev project
+.pydevproject
