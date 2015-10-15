@@ -17,10 +17,23 @@ class TestGameEvents(unittest.TestCase):
         self.app = app.test_client()
         db.create_all()
         
-        #Adding one record
+        #Adding one gaming session and one game event
         new_gamingsession = models.GamingSession()
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        new_gameevent = models.GameEvent(1,gameevent)
         db.session.add(new_gamingsession)
+        db.session.add(new_gameevent)
         db.session.commit()
+
 
     
     @classmethod
@@ -37,13 +50,43 @@ class TestGameEvents(unittest.TestCase):
     def test_finishgamingsession(self):
         self.fail("Not implemented")
         
-    @unittest.expectedFailure
     def test_recordgameevent(self):
-        self.fail("Not implemented")
+        sessionid = 1
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        result = controller.recordgameevent(sessionid, gameevent)
         
-    @unittest.expectedFailure
+        self.assertTrue(result)
+        
     def test_getgameevents(self):
-        self.fail("Not implemented")
+        sessionid = 1
+        result = controller.getgameevents(sessionid)
+        self.maxDiff = None
+        
+        #Manually create the game event as it should appear in the database after adding it via controller
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        new_gameevent = models.GameEvent(1,gameevent)
+        new_gameevent.id = 1
+        
+        expected = [new_gameevent]
+        self.assertEqual(expected, result)
     
     def test_getgamesessionstatus(self):
         sessionid = 1
