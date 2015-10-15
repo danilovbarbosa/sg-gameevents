@@ -61,3 +61,6 @@ target/
 
 #DB Migrations
 db_repository/
+
+#TMP folder
+tmp/

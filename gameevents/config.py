@@ -10,5 +10,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'gamingsession.db')
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
+TMPDIR = os.path.join(basedir, 'tmp')
+
 WTF_CSRF_ENABLED = True
 SECRET_KEY = 'you-will-never-guess'
