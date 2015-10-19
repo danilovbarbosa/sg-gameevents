@@ -3,17 +3,74 @@ Created on 15 Oct 2015
 
 @author: mbrandaoca
 '''
+import uuid, OpenSSL
+from app import app, db, models
 
-from app import db, models
-
-from app.errors import SessionNotActive
+from app.errors import SessionNotActive, TokenExpired
+from flask.ext.api.exceptions import AuthenticationFailed
 from sqlalchemy.orm.exc import NoResultFound 
+from test.test_robotparser import PasswordProtectedSiteTestCase
+
+from itsdangerous import BadSignature, SignatureExpired
+
+# def generatesessionid():
+#     # from https://stackoverflow.com/questions/817882/unique-session-id-in-python/6092448#6092448
+#     sessionid = uuid.UUID(bytes = OpenSSL.rand.bytes(16))
+#     #sessionid = uuid.UUID(bytes = M2Crypto.m2.rand_bytes(num_bytes=16))
+#     return sessionid
+
+def authenticate(clientid_or_token, apikey):
+    #Try using the token first
+    try:
+        client = models.Client.verify_auth_token(clientid_or_token)
+        if client:
+            return client.generate_auth_token()
+        else:
+            # try to authenticate with clientid and apikey
+            credentialscheck = client.verify_apikey(apikey)
+            if credentialscheck:
+                client.generate_auth_token()
+            else:
+                return False
+    except (BadSignature, SignatureExpired) as e:
+        # try to authenticate with clientid and apikey
+        client = models.Client.query.filter_by(clientid = clientid_or_token).first()
+        if client:
+            credentialscheck = client.verify_apikey(apikey)
+            if credentialscheck:
+                return client.generate_auth_token()
+            else:
+                return False
+        else:
+            return False
+    except Exception as e:
+        app.logger.warning("Unexpected failure in authenticate function")
+        app.logger.warning(e, exc_info=False)
+        raise e
 
 
+def newclient(clientid, apikey):
+    if clientid is None or apikey is None:
+        raise Exception('Invalid parameters')
+    if models.Client.query.filter_by(clientid = clientid).first() is not None:
+        raise Exception('Client exists')
+    client = models.Client(clientid, apikey)
+    db.session.add(client)
+    try:
+        db.session.commit()
+        #print(client)
+        return client
+    except Exception as e:
+        app.logger.warning(e)
+        db.session.rollback()
+        db.session.flush() # for resetting non-commited .add()
+        return False
+    
+    
 def startgamingsession():
     new_gamingsession = models.GamingSession()
     db.session.add(new_gamingsession)
-    db.session.commit()
+    #db.session.commit()
 
     try:
         db.session.commit()

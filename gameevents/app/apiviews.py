@@ -8,11 +8,66 @@ from flask import Flask, jsonify, request, abort
 from flask import current_app, Blueprint, render_template
 from flask.ext.api import status 
 from flask.helpers import make_response
-from app import app
+from app import app, auth
 import datetime
 import json
 
+from app.errors import TokenExpired
+
+
 from app import controller
+from app.models import Client
+
+from flask.ext.api.exceptions import AuthenticationFailed
+
+@app.route('/gameevents/api/v1.0/token', methods = ['POST'])
+def get_auth_token():
+    if not request.json or not 'clientid' in request.json:
+        abort(status.HTTP_400_BAD_REQUEST)
+    else:
+        clientid = request.json['clientid']
+        if "apikey" in request.json:
+            apikey = request.json['apikey']
+        else:
+            apikey = False
+        try:
+            token = controller.authenticate(clientid, apikey)
+        except AuthenticationFailed as e:
+            app.logger.warning(e.args)
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please try again.'})
+        except TokenExpired as e:
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
+        except Exception as e:
+            app.logger.warning(e, exc_info=True)
+            abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            if token:
+                return jsonify({ 'token': token.decode('ascii') })
+            else:
+                abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please try again.'})
+        
+
+@auth.verify_password
+def verify_password(clientid_or_token, apikey=False):
+    try:
+        return controller.authenticate(clientid_or_token, apikey)
+    except Exception as e:
+        app.logger.warning(e)
+        abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
+           
+    
+
+
+# @app.route('/gameevents/api/v1.0/client', methods = ['POST'])
+# def new_client():
+#     clientid = request.json.get('clientid')
+#     apikey = request.json.get('apikey')
+#     try:
+#         client = controller.newclient(clientid, apikey)
+#     except Exception as e:
+#         abort(400, {'message': e.args}) # missing arguments
+#     #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
+#     return jsonify({'message': 'Client ID created'}), status.HTTP_201_CREATED
 
 @app.route('/gameevents/api/v1.0/initsession', methods=['POST'])
 def initsession():
@@ -24,7 +79,7 @@ def initsession():
         'status':'active'
     }
     controller.startgamingsession()
-    return jsonify({'gamingsession': gamingsession}), status.HTTP_200_OK
+    return jsonify({'token': gamingsession}), status.HTTP_200_OK
 
 @app.route('/gameevents/api/v1.0/endsession', methods=['POST'])
 def endsession():

@@ -13,4 +13,4 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 TMPDIR = os.path.join(basedir, 'tmp')
 
 WTF_CSRF_ENABLED = True
-SECRET_KEY = 'you-will-never-guess'
+SECRET_KEY = 'heytheredonottrytomesswithmemister'

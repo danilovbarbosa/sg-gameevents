@@ -7,6 +7,9 @@ from app import models, controller, errors
 
 from app.errors import SessionNotActive
 from sqlalchemy.orm.exc import NoResultFound
+#from flask.ext.api.exceptions import AuthenticationFailed
+
+import json
 
 #engine = None
 
@@ -14,11 +17,25 @@ class TestGameEvents(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
+        app.logger.debug("Initializing tests.")
         app.config['TESTING'] = True
+        app.debug = True
         app.config['WTF_CSRF_ENABLED'] = False
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'gamingevents_test.db')
+        
+        # Use Flask's test client for our test.
         self.app = app.test_client()
+        
+        #Create a brand new test db
         db.create_all()
+        
+        #Add a clientid and apikey
+        new_client = models.Client("myclientid", "myapikey")        
+        self.mytoken = new_client.generate_auth_token()
+        
+        self.myexpiredtoken = new_client.generate_auth_token(1)
+        import time
+        time.sleep(3) #expire the token
         
         #Adding one gaming session and one game event
         new_gamingsession = models.GamingSession()
@@ -35,10 +52,14 @@ class TestGameEvents(unittest.TestCase):
                            </choice>
                         </event>'''
         new_gameevent = models.GameEvent(1,gameevent)
+        
         db.session.add(new_gamingsession)
         db.session.add(new_gamingsession2)
         db.session.add(new_gameevent)
+        db.session.add(new_client)
         db.session.commit()
+        
+        
 
 
     
@@ -144,6 +165,61 @@ class TestGameEvents(unittest.TestCase):
         sessionid = 100000
         with self.assertRaises(NoResultFound):
             controller.getgamingsessionstatus(sessionid)
+            
+        
+    def test_credentialslogin(self):
+        # Make a test request for a token
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "200 OK")
+        
+    def test_tokenlogin(self):
+        # Make a test request for a token
+        requestdata = json.dumps(dict(clientid=self.mytoken.decode()))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "200 OK")
+        
+    def test_badtokenlogin(self):
+        # Make a test request for a token
+        badtoken = "badlogin" + self.mytoken.decode()[8:]
+        #badtoken = badtoken.encode("ascii")
+        requestdata = json.dumps(dict(clientid=badtoken))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+        
+    def test_expiredtokenlogin(self):
+        # Make a test request with an expired token
+        token = self.myexpiredtoken.decode()
+        
+        requestdata = json.dumps(dict(clientid=token))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+        
+    def test_badcredentialslogin(self):
+        # Make a test request for a token
+        requestdata = json.dumps(dict(clientid="myclientid2", apikey="myapikey2"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is Unauthorized.                                           
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
         
 if __name__ == '__main__':
     unittest.main()
