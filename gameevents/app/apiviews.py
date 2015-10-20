@@ -58,16 +58,16 @@ def verify_password(clientid_or_token, apikey=False):
     
 
 
-# @app.route('/gameevents/api/v1.0/client', methods = ['POST'])
-# def new_client():
-#     clientid = request.json.get('clientid')
-#     apikey = request.json.get('apikey')
-#     try:
-#         client = controller.newclient(clientid, apikey)
-#     except Exception as e:
-#         abort(400, {'message': e.args}) # missing arguments
-#     #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
-#     return jsonify({'message': 'Client ID created'}), status.HTTP_201_CREATED
+@app.route('/gameevents/api/v1.0/client', methods = ['POST'])
+def new_client():
+    clientid = request.json.get('clientid')
+    apikey = request.json.get('apikey')
+    try:
+        client = controller.newclient(clientid, apikey)
+    except Exception as e:
+        abort(400, {'message': e.args}) # missing arguments
+    #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
+    return jsonify({'message': 'Client ID created'}), status.HTTP_201_CREATED
 
 @app.route('/gameevents/api/v1.0/initsession', methods=['POST'])
 def initsession():

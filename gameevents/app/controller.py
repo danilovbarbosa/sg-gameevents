@@ -9,7 +9,6 @@ from app import app, db, models
 from app.errors import SessionNotActive, TokenExpired
 from flask.ext.api.exceptions import AuthenticationFailed
 from sqlalchemy.orm.exc import NoResultFound 
-from test.test_robotparser import PasswordProtectedSiteTestCase
 
 from itsdangerous import BadSignature, SignatureExpired
 
