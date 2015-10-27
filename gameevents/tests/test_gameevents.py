@@ -1,6 +1,7 @@
 import os
 import unittest
 import time
+import datetime
 
 from config import basedir
 from app import app, db
@@ -39,8 +40,8 @@ class TestGameEvents(unittest.TestCase):
         time.sleep(3) #expire the token
         
         #Adding one gaming session and one game event
-        new_gamingsession = models.GamingSession()
-        new_gamingsession2 = models.GamingSession()
+        new_gamingsession = models.GamingSession("aaaa")
+        new_gamingsession2 = models.GamingSession('bbbb')
         new_gamingsession2.status = False
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
@@ -72,7 +73,8 @@ class TestGameEvents(unittest.TestCase):
         
     def test_startgamingsession(self):
         # There are already two sessions, the third should have ID 3
-        newsessionid = controller.startgamingsession()
+        sessionid = "cccc"
+        newsessionid = controller.startgamingsession(sessionid)
         self.assertEqual(newsessionid, 3)
                 
     @unittest.expectedFailure
@@ -80,7 +82,8 @@ class TestGameEvents(unittest.TestCase):
         self.fail("Not implemented")
         
     def test_recordgameevent(self):
-        sessionid = 1
+        token = self.mytoken
+        timestamp = str(datetime.datetime.now())
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
                            <ship load="INF_SHIP_STEALTH" hostile="false"/>
@@ -91,36 +94,40 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        result = controller.recordgameevent(sessionid, gameevent)
+        result = controller.recordgameevent(token, timestamp, gameevent)
         
         self.assertTrue(result)
         
-    def test_recordgameeventinactivesession(self):
-        sessionid = 2
-        gameevent = '''<event name="INF_STEALTH_LOST">
+    '''def test_recordgameeventinactivesession(self):
+        token = self.myexpiredtoken
+        timestamp = str(datetime.datetime.now())
+        gameevent = ''<event name="INF_STEALTH_LOST">
                            <choice>
                               <text>Lose the Stealth ship.</text>
                                 <event>
                                     <ship load="INF_SHIP_STEALTH" hostile="false"/>
                                 </event>
                            </choice>
-                        </event>'''
+                        </event>''
+        
         with self.assertRaises(SessionNotActive):
-            controller.recordgameevent(sessionid, gameevent)
+            controller.recordgameevent(token, timestamp, gameevent)'''
 
+    '''
     def test_recordgameeventinexistentsession(self):
-        sessionid = 10000
-        gameevent = '''<event name="INF_STEALTH_LOST">
+        sessionid = "abcde"
+        timestamp = str(datetime.datetime.now())
+        gameevent = ''<event name="INF_STEALTH_LOST">
                            <choice>
                               <text>Lose the Stealth ship.</text>
                                 <event>
                                     <ship load="INF_SHIP_STEALTH" hostile="false"/>
                                 </event>
                            </choice>
-                        </event>'''
+                        </event>''
         
         with self.assertRaises(NoResultFound):
-            controller.recordgameevent(sessionid, gameevent)
+            controller.recordgameevent(sessionid,timestamp, gameevent)'''
 
         
     def test_getgameevents(self):
@@ -170,7 +177,7 @@ class TestGameEvents(unittest.TestCase):
         
     def test_credentialslogin(self):
         # Make a test request for a token
-        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid = "aaaa"))
         response = self.app.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -180,7 +187,7 @@ class TestGameEvents(unittest.TestCase):
         
     def test_tokenlogin(self):
         # Make a test request for a token
-        requestdata = json.dumps(dict(clientid=self.mytoken.decode()))
+        requestdata = json.dumps(dict(clientid=self.mytoken.decode(), sessionid="aaaa"))
         response = self.app.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -192,7 +199,7 @@ class TestGameEvents(unittest.TestCase):
         # Make a test request for a token
         badtoken = "badlogin" + self.mytoken.decode()[8:]
         #badtoken = badtoken.encode("ascii")
-        requestdata = json.dumps(dict(clientid=badtoken))
+        requestdata = json.dumps(dict(clientid=badtoken, sessionid="aaaa"))
         response = self.app.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -204,7 +211,7 @@ class TestGameEvents(unittest.TestCase):
         # Make a test request with an expired token
         token = self.myexpiredtoken.decode()
         
-        requestdata = json.dumps(dict(clientid=token))
+        requestdata = json.dumps(dict(clientid=token, sessionid="aaaa"))
         response = self.app.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -214,7 +221,7 @@ class TestGameEvents(unittest.TestCase):
         
     def test_badcredentialslogin(self):
         # Make a test request for a token
-        requestdata = json.dumps(dict(clientid="myclientid2", apikey="myapikey2"))
+        requestdata = json.dumps(dict(clientid="myclientid2", apikey="myapikey2", sessionid="aaaa"))
         response = self.app.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 

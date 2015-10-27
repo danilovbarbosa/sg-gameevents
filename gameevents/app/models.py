@@ -58,14 +58,16 @@ class GamingSession(db.Model):
     __tablename__ = "gamingsession"
  
     id = db.Column(db.Integer, primary_key=True)
+    sessionid = db.Column(db.String)
     status = db.Column(db.Boolean)
     
     gameevents = db.relationship("GameEvent", backref="gamingsession")
  
     #----------------------------------------------------------------------
-    def __init__(self):
+    def __init__(self, sessionid):
         """"""
         self.status = True
+        self.sessionid = sessionid
         
     def __eq__(self, other):
         return self.id == other.id and self.status == other.status

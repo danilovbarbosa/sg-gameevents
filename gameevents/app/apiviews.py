@@ -21,19 +21,26 @@ from app.models import Client
 
 from flask.ext.api.exceptions import AuthenticationFailed
 
-'''TODO: change response here to JSON format'''
+'''TODO: check if request contains clientid, apikey and **valid** sessionid (will need to call the userprof svc)'''
 @app.route('/gameevents/api/v1.0/token', methods = ['POST'])
 def get_auth_token():
-    if not request.json or not 'clientid' in request.json:
+    if not request.json or not 'clientid' or not 'sessionid' in request.json:
         abort(status.HTTP_400_BAD_REQUEST)
     else:
         clientid = request.json['clientid']
+        sessionid = request.json['sessionid']
         if "apikey" in request.json:
             apikey = request.json['apikey']
         else:
             apikey = False
         try:
-            token = controller.authenticate(clientid, apikey)
+            #TODO: check if sessionid exists in db
+            
+            #if does not exist, ask the user profile service to confirm that session id exists and that user 
+            # authorized the game to use it and the game events service to receive data. if everything is fine,
+            # add session id to db and proceed to create a token for the game.
+            #controller.startgamingsession(sessionid) 
+            token = controller.authenticate(clientid, apikey, sessionid)
         except AuthenticationFailed as e:
             app.logger.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please try again.'})

@@ -18,7 +18,10 @@ from itsdangerous import BadSignature, SignatureExpired
 #     #sessionid = uuid.UUID(bytes = M2Crypto.m2.rand_bytes(num_bytes=16))
 #     return sessionid
 
-def authenticate(clientid_or_token, apikey):
+def authenticate(clientid_or_token, apikey, sessionid):
+    #TODO: check if sessionid exists in db. if not, request the user profiling service to
+    # verify if sessionid exists and the user authorized its use.
+    app.logger.debug("TODO: Check session id!")
     #Try using the token first
     app.logger.debug("Try to verify token...")
     try:
@@ -67,8 +70,8 @@ def newclient(clientid, apikey):
         return False
     
     
-def startgamingsession():
-    new_gamingsession = models.GamingSession()
+def startgamingsession(sessionid):
+    new_gamingsession = models.GamingSession(sessionid)
     db.session.add(new_gamingsession)
     #db.session.commit()
 
