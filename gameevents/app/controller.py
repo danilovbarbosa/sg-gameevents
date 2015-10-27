@@ -20,6 +20,7 @@ from itsdangerous import BadSignature, SignatureExpired
 
 def authenticate(clientid_or_token, apikey):
     #Try using the token first
+    app.logger.debug("Try to verify token...")
     try:
         client = models.Client.verify_auth_token(clientid_or_token)
         if client:
@@ -43,8 +44,8 @@ def authenticate(clientid_or_token, apikey):
         else:
             return False
     except Exception as e:
-        app.logger.warning("Unexpected failure in authenticate function")
-        app.logger.warning(e, exc_info=False)
+        app.logger.error("Unexpected failure in authenticate function")
+        app.logger.error(e, exc_info=False)
         raise e
 
 
@@ -110,13 +111,18 @@ def getgameevents(sessionid):
     else:
         raise NoResultFound('This gaming session ID does not exist.')
     
-def recordgameevent(sessionid, gameevent):
-    if not isexistinggamingsession(sessionid):
-        raise NoResultFound('This gaming session ID does not exist.')
+def recordgameevent(token, timestamp, gameevent):
+    app.logger.debug("Trying to authenticate token...")
+    if not authenticate(token, False):
+        app.logger.warning("User tried to use an invalid token.")
+        raise AuthenticationFailed('Unauthorized token.')
     else:
-        if not getgamingsessionstatus(sessionid):
+        app.logger.debug("Token valid, continuing...")
+        if False: #not getgamingsessionstatus(sessionid):
             raise SessionNotActive('This gaming session is no longer active.')
         else:
+            app.logger.warning("Trying to record the game event.")
+            '''
             new_gameevent = models.GameEvent(sessionid, gameevent)
             db.session.add(new_gameevent)
             successful = False
@@ -128,7 +134,10 @@ def recordgameevent(sessionid, gameevent):
                 db.session.rollback()
                 db.session.flush() # for resetting non-commited .add()
                 successful = False
+                '''
+            successful = True
             return successful
+            
     
 def __inactivategamingsession(sessionid):
     return False

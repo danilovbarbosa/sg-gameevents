@@ -1,5 +1,6 @@
 import os
 import unittest
+import time
 
 from config import basedir
 from app import app, db
@@ -34,7 +35,7 @@ class TestGameEvents(unittest.TestCase):
         self.mytoken = new_client.generate_auth_token()
         
         self.myexpiredtoken = new_client.generate_auth_token(1)
-        import time
+        
         time.sleep(3) #expire the token
         
         #Adding one gaming session and one game event
