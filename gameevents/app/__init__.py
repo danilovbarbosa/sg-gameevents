@@ -20,20 +20,21 @@ import sys
 from config import TMPDIR
 import logging
 from logging.handlers import RotatingFileHandler
-from logging import StreamHandler
+#from logging import StreamHandler
 
 if not app.debug:
     file_handler = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents.log.txt'), 'a', 1 * 1024 * 1024, 10)
     file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
     #app.logger = logging.getLogger(__name__)
-    app.logger.setLevel(logging.INFO)
+    #app.logger.setLevel(logging.INFO)
     file_handler.setLevel(logging.INFO)
     app.logger.addHandler(file_handler)
     app.logger.info('Game Events Service Start Up')
 else:
-    console_handler = StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
-    app.logger.addHandler(console_handler)
-    app.logger.debug('Game Events Service Start Up')
+    file_handler = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-debug.log.txt'), 'a', 1 * 1024 * 1024, 10)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+    file_handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(file_handler)
+    app.logger.debug('Game Events Service Start Up - Debugging!')
     
 from app import apiviews, controller

@@ -2,18 +2,27 @@ import os
 import unittest
 import time
 import datetime
+import json
 
-from config import basedir
+from config import basedir, TMPDIR
 from app import app, db
 from app import models, controller, errors
 
-from app.errors import SessionNotActive
+from app.errors import InvalidGamingSession
 from sqlalchemy.orm.exc import NoResultFound
 #from flask.ext.api.exceptions import AuthenticationFailed
 
-import json
+# Logging:
+import logging
+from logging.handlers import RotatingFileHandler
+ 
+file_handler_debug = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-unittests.log.txt'), 'a', 1 * 1024 * 1024, 10)
+file_handler_debug.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+file_handler_debug.setLevel(logging.DEBUG)
+app.logger.addHandler(file_handler_debug)
+app.logger.info('Game Events Service Start Up - Debugging')
 
-#engine = None
+
 
 class TestGameEvents(unittest.TestCase):
     
@@ -32,16 +41,16 @@ class TestGameEvents(unittest.TestCase):
         db.create_all()
         
         #Add a clientid and apikey
-        new_client = models.Client("myclientid", "myapikey")        
-        self.mytoken = new_client.generate_auth_token()
+        new_client = models.Client("myclientid", "myapikey")     
         
-        self.myexpiredtoken = new_client.generate_auth_token(1)
-        
-        time.sleep(3) #expire the token
         
         #Adding one gaming session and one game event
-        new_gamingsession = models.GamingSession("aaaa")
-        new_gamingsession2 = models.GamingSession('bbbb')
+        new_gamingsession = models.GamingSession("aaaa", "myclientid")
+        self.mytoken = new_gamingsession.generate_auth_token()
+        self.myexpiredtoken = new_gamingsession.generate_auth_token(1)
+        time.sleep(3) #expire the token
+        
+        new_gamingsession2 = models.GamingSession('bbbb', "myclientid")
         new_gamingsession2.status = False
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
@@ -53,7 +62,7 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        new_gameevent = models.GameEvent(1,gameevent)
+        new_gameevent = models.GameEvent("aaaa",gameevent)
         
         db.session.add(new_gamingsession)
         db.session.add(new_gamingsession2)
@@ -67,7 +76,50 @@ class TestGameEvents(unittest.TestCase):
         db.session.remove()
         db.drop_all()
         
-
+    def test_login_existing_sid(self):
+        """Make a test request for a login with valid credentials and existing sessionid.
+        """
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid = "aaaa"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "200 OK")
+    
+    def test_login_nonexisting_but_valid_sid(self):
+        """Make a test request for a login with valid credentials and a valid - but still not in the db - sessionid.
+        """
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="xxxx"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "200 OK")
+        
+    
+    def test_login_invalid_sid(self):
+        """Make a test request for a login with valid credentials but invalid sessionid.
+        """
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="zzzz"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+    
+    def test_badlogin(self):
+        """Make a test request with invalid/missing parameters.
+        """
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 400 BAD REQUEST.                                           
+        self.assertEquals(response.status, "400 BAD REQUEST")
         
 if __name__ == '__main__':
     unittest.main()

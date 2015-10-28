@@ -16,8 +16,8 @@ from flask.ext.api.exceptions import AuthenticationFailed
 
 class Client(db.Model):
     """Model "clients" table in the database. 
-    It contains id, a clientid, and hashed apikey. Each application
-    using the service must have an entry in this table to be able
+    It contains id, a clientid, and hashed apikey. Each game/application
+    using the service (i.e. a client) must have an entry in this table to be able
     to request an authentication token.    
     """
     
@@ -37,10 +37,13 @@ class Client(db.Model):
     def verify_apikey(self, apikey):
         return pwd_context.verify(apikey, self.apikey_hash)
 
+    '''
     def generate_auth_token(self, expiration = 600):        
         s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
         return s.dumps({ 'id': self.id })
+    '''
 
+    """
     @staticmethod
     def verify_auth_token(token):
         s = Serializer(app.config['SECRET_KEY'])
@@ -56,6 +59,7 @@ class Client(db.Model):
             #return False # invalid token
         client = Client.query.get(data['id'])        
         return client
+    """
 
 class GamingSession(db.Model):
     """"""
@@ -64,17 +68,50 @@ class GamingSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sessionid = db.Column(db.String)
     status = db.Column(db.Boolean)
-    
+    clientid = db.Column(db.Integer, db.ForeignKey('client.id'))
     gameevents = db.relationship("GameEvent", backref="gamingsession")
  
     #----------------------------------------------------------------------
-    def __init__(self, sessionid):
+    
+    def __init__(self, sessionid, clientid):
         """"""
         self.status = True
         self.sessionid = sessionid
+        self.clientid = clientid
         
     def __eq__(self, other):
-        return self.id == other.id and self.status == other.status
+        return (self.id == other.id and 
+                self.status == other.status and 
+                self.sessionid == other.sessionid and 
+                self.clientid == other.clientid)
+    
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except SignatureExpired as e:
+            app.logger.debug("Expired token, raising exception")
+            raise e
+            #return False # valid token, but expired
+        except BadSignature as e:
+            app.logger.debug("Invalid token, returning false.")
+            app.logger.debug(e, exc_info=False)
+            #raise e
+            return False # invalid token
+        except Exception as e:
+            app.logger.error(e, exc_info=False)
+            raise e
+        
+        sessionid = GamingSession.query.get(data['sessionid'])    
+        clientid = GamingSession.query.get(data['clientid'])
+        id =  GamingSession.query.get(data['id'])
+        return dict(sessionid=sessionid, clientid=clientid, id=id)
+    
+    def generate_auth_token(self, expiration = 600):        
+        s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
+        return s.dumps({ 'id': self.id, 'sessionid': self.sessionid, 'clientid' : self.clientid  })
+    
     
 class GameEvent(db.Model):
     """"""

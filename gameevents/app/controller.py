@@ -6,7 +6,7 @@ of the application when called by the views.
 import uuid, OpenSSL
 from app import app, db, models
 
-from app.errors import SessionNotActive, TokenExpired
+from app.errors import InvalidGamingSession, TokenExpired
 from flask.ext.api.exceptions import AuthenticationFailed
 from sqlalchemy.orm.exc import NoResultFound 
 
@@ -19,40 +19,60 @@ from itsdangerous import BadSignature, SignatureExpired
 #     return sessionid
 
 def authenticate(clientid_or_token, apikey, sessionid):
-    #TODO: check if sessionid exists in db. if not, request the user profiling service to
-    # verify if sessionid exists and the user authorized its use.
-    app.logger.debug("TODO: Check session id!")
-    #Try using the token first
-    app.logger.debug("Try to verify token...")
+    """Takes a client_id + apikey + sessionid and checks if it is a valid combination OR
+    a token. Returns the token.
+    """
+    
+    clientid = False
+    
+    #First try with the token
+    token = clientid_or_token
     try:
-        client = models.Client.verify_auth_token(clientid_or_token)
-        if client:
-            return client.generate_auth_token()
-        else:
-            # try to authenticate with clientid and apikey
-            credentialscheck = client.verify_apikey(apikey)
-            if credentialscheck:
-                client.generate_auth_token()
+        gamingsession = models.GamingSession.verify_auth_token(token)
+        if gamingsession and ("sessionid" in gamingsession):
+            app.logger.debug("Got a valid token. Now I know the sessionid and clientid. Going to check if they are in the db.")
+            sessionid = gamingsession["sessionid"]
+            clientid = gamingsession["clientid"]
+            if (models.GamingSession.query.filter(clientid = clientid, sessionid=sessionid).first()):
+                app.logger.debug("Valid combination of sessionid/clientid, return true.")
+                return token
             else:
-                return False
-    except (BadSignature, SignatureExpired) as e:
-        # try to authenticate with clientid and apikey
-        client = models.Client.query.filter_by(clientid = clientid_or_token).first()
-        if client:
-            credentialscheck = client.verify_apikey(apikey)
-            if credentialscheck:
-                return client.generate_auth_token()
-            else:
+                app.logger.debug("This combination is not in the db. Bad token!")
                 return False
         else:
-            return False
+            app.logger.debug("NOT a valid token. Gonna try clientid+apikey+sessionid...")
+            clientid = clientid_or_token
+            client = models.Client(clientid, apikey)         
+           
+            if (client.verify_apikey(apikey)):
+                app.logger.debug("Clientid and apikey are valid. Continuing...")
+            else:
+                return False
     except Exception as e:
-        app.logger.error("Unexpected failure in authenticate function")
-        app.logger.error(e, exc_info=False)
+        app.logger.error("Unexpected failure when trying to authenticate token and/or clientid+apikey+sessionid")
+        app.logger.error(e.args, exc_info=False)
         raise e
 
+    # Now I should have sessionid and clientid. I can see if they are valid
+    app.logger.debug("Now I have sessionid (%s) and clientid (%s). All I need now is to check if this sessionid is valid." % (sessionid, clientid))
+    gamingsession = models.GamingSession(sessionid, clientid)
+    try:
+        if (check_sessionid(sessionid, clientid)):
+            app.logger.debug("Sessionid is valid. Generate a token.")
+            token = gamingsession.generate_auth_token()
+            return token
+        else:
+            app.logger.debug("Session ID not valid. Returning false.")
+            return False
+    except Exception as e:
+        app.logger.error("Unexpected failure when checking the sessionid/clientid.")
+        app.logger.error(e.args, exc_info=False)
+        raise e
 
 def newclient(clientid, apikey):
+    """ Adds a new client to the database.
+    TODO: Protect this function so that only admins have access.
+    """
     if clientid is None or apikey is None:
         raise Exception('Invalid parameters')
     if models.Client.query.filter_by(clientid = clientid).first() is not None:
@@ -122,7 +142,7 @@ def recordgameevent(token, timestamp, gameevent):
     else:
         app.logger.debug("Token valid, continuing...")
         if False: #not getgamingsessionstatus(sessionid):
-            raise SessionNotActive('This gaming session is no longer active.')
+            raise InvalidGamingSession('This gaming session is invalid.')
         else:
             app.logger.warning("Trying to record the game event.")
             '''
@@ -147,3 +167,47 @@ def __inactivategamingsession(sessionid):
     
 def __getlastgamingsessionid():
     return False
+
+def check_sessionid(sessionid, clientid):
+    """Checks if sessionid exists in db. If yes, returns true.
+    If not, it communicates with the user profile service and checks if
+    it is a valid session id. If yes, adds the sessionid to the local db
+    and returns true. If not, returns false. 
+    """
+    try:
+        query = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid, 
+                                                              models.GamingSession.clientid == clientid)
+        res = query.count()
+        if res >= 1:
+            app.logger.debug("Sessionid exists, returning true.")
+            return True
+        else:
+            app.logger.debug("Sessionid is not in db. Let's ask the user profiling service...")
+            if (_is_valid_sessionid(sessionid)):
+                app.logger.debug("User profiling service says it's a good session id! Let's add it to the db.")
+                gamingsession = models.GamingSession(sessionid, clientid)
+                db.session.add(gamingsession)
+                try:
+                    db.session.commit()
+                    app.logger.debug("Added sessionid to db.")
+                    return True
+                except Exception as e:
+                    app.logger.error("Unable to add session id to db. " + e.args)
+                    db.session.rollback()
+                    db.session.flush() # for resetting non-commited .add()
+                    raise e
+            else:
+                app.logger.debug("Sessionid is NOT authorized by user profiling service.")
+                return False
+    except Exception as e:
+        app.logger.error(e.args)
+        raise e
+    
+def _is_valid_sessionid(sessionid):
+    """Asks the userprofile service if the sessionid is valid.
+    TODO: write the implementation!
+    """
+    if (sessionid != "zzzz"): 
+        return True
+    else:
+        return False

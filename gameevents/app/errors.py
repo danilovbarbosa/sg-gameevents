@@ -2,7 +2,7 @@
 Creates a few custom exceptions used throughout the application.
 '''
 
-class SessionNotActive(Exception):
+class InvalidGamingSession(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
