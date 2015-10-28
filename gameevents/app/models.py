@@ -16,8 +16,10 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
 from flask.ext.api.exceptions import AuthenticationFailed
 
 class Client(db.Model):
-    # ...
-    __tablename__ = "client"
+    """Docstring for class Client."""
+    
+    #: Doc comment for class attribute Client.__tablename__.
+    __tablename__ = "client"    
     id = db.Column(db.String, primary_key=True)
     clientid = db.Column(db.String)
     apikey_hash = db.Column(db.String)
