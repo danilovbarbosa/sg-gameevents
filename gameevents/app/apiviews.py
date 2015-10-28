@@ -33,8 +33,8 @@ def token():
 
     #Check if request is json and contains all the required fields
     required_fields = ["clientid", "apikey", "sessionid"]
-    if not request.json or not (set(required_fields).issubset(request.json)):        
-        abort(status.HTTP_400_BAD_REQUEST, {'message': 'Invalid request. Please try again.'})
+    if not request.json or not (set(required_fields).issubset(request.json)): 
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST      
     else:
         clientid = request.json['clientid']
         sessionid = request.json['sessionid']
@@ -74,11 +74,12 @@ def new_client():
     apikey = request.json.get('apikey')
     try:
         client = controller.newclient(clientid, apikey)
+        return jsonify({'message': 'Client ID created'}), status.HTTP_201_CREATED
     except Exception as e:
         app.logger.error(e, exc_info=False)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
     #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
-    return jsonify({'message': 'Client ID created'}), status.HTTP_201_CREATED
+    
 
 '''
 @app.route('/gameevents/api/v1.0/initsession', methods=['POST'])
@@ -114,8 +115,8 @@ def commitevent():
     """
     #Check if request is json and contains all the required fields
     required_fields = ["token", "gameevent", "timestamp"]
-    if not request.json or not (set(required_fields).issubset(request.json)):        
-        abort(status.HTTP_400_BAD_REQUEST, {'message': 'Invalid request. Please try again.'})
+    if not request.json or not (set(required_fields).issubset(request.json)):  
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
     else:    
         try:
             #app.logger.debug("trying to expire the token.")
