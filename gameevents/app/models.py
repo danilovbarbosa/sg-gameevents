@@ -1,7 +1,6 @@
 '''
-Created on 14 Oct 2015
-
-@author: mbrandaoca
+Models that extend the Model class provided by 
+Flask's SQLAlchemy extension (flask.ext.sqlalchemy).
 '''
 
 import uuid, OpenSSL
@@ -16,14 +15,17 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
 from flask.ext.api.exceptions import AuthenticationFailed
 
 class Client(db.Model):
-    """Docstring for class Client."""
+    """Model "clients" table in the database. 
+    It contains id, a clientid, and hashed apikey. Each application
+    using the service must have an entry in this table to be able
+    to request an authentication token.    
+    """
     
-    #: Doc comment for class attribute Client.__tablename__.
     __tablename__ = "client"    
     id = db.Column(db.String, primary_key=True)
     clientid = db.Column(db.String)
     apikey_hash = db.Column(db.String)
-    #token = db.Column(db.String)
+
 
     def __init__(self, clientid, apikey):
         """"""

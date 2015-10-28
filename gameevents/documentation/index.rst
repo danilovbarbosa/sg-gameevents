@@ -4,31 +4,51 @@
    contain the root `toctree` directive.
 
 Welcome to gameevents's documentation!
-======================================
-
-Contents:
-
-.. toctree::
-   :maxdepth: 3
+######################################
 
 
-------------------
+**********
+Components
+**********
+
+===
 App
-------------------
+===
 
 .. automodule:: app
    :members:
-   
-------------------
-Models
-------------------
 
+========
+Apiviews
+========
+   
+.. automodule:: app.apiviews
+   :members:
+
+==========
+Controller
+==========
+   
+.. automodule:: app.controller
+   :members:
+
+======
+Models
+======
    
 .. automodule:: app.models
    :members:
    
+======
+Errors
+======
+   
+.. automodule:: app.errors
+   :members:
+
+
 Indices and tables
-==================
+##################
 
 * :ref:`genindex`
 * :ref:`modindex`

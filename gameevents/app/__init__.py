@@ -1,8 +1,9 @@
 '''
-Created on 14 Oct 2015
-
-@author: mbrandaoca
+Main module for starting the gameevents service. Imports required 
+modules from Flask (including DB and auth modules, 
+and sets up logging.
 '''
+
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 

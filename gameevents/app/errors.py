@@ -1,7 +1,5 @@
 '''
-Created on 15 Oct 2015
-
-@author: mbrandaoca
+Creates a few custom exceptions used throughout the application.
 '''
 
 class SessionNotActive(Exception):

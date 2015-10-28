@@ -1,8 +1,8 @@
 '''
-Created on 15 Oct 2015
-
-@author: mbrandaoca
+Controller of the application, which defines the behaviour
+of the application when called by the views.
 '''
+
 import uuid, OpenSSL
 from app import app, db, models
 

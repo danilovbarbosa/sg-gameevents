@@ -1,7 +1,7 @@
 '''
-Created on 15 Oct 2015
-
-@author: mbrandaoca
+Defines the methods/endpoints (the views) of the gameevents service.
+This defines the interaction points, but the actual logic is treated
+by the :mod:`controller`.
 '''
 from flask import render_template, flash, redirect
 from flask import Flask, jsonify, request, abort
