@@ -110,8 +110,7 @@ def endsession():
 
 @app.route('/gameevents/api/v1.0/commitevent', methods=['POST'])
 def commitevent():
-    """Receives a json request with an auth token, timestamp, and game event.
-    token:
+    """Receives a json request with a token, timestamp, and game event.
     """
     #Check if request is json and contains all the required fields
     required_fields = ["token", "gameevent", "timestamp"]

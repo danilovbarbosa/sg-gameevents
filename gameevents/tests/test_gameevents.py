@@ -18,7 +18,8 @@ from logging.handlers import RotatingFileHandler
  
 file_handler_debug = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-unittests.log.txt'), 'a', 1 * 1024 * 1024, 10)
 file_handler_debug.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-file_handler_debug.setLevel(logging.DEBUG)
+#file_handler_debug.setLevel(logging.DEBUG)
+file_handler_debug.setLevel(logging.INFO)
 app.logger.addHandler(file_handler_debug)
 app.logger.info('Game Events Service Start Up - Debugging')
 
@@ -28,7 +29,7 @@ class TestGameEvents(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
-        app.logger.debug("Initializing tests.")
+        app.logger.info("Initializing tests.")
         app.config['TESTING'] = True
         app.debug = True
         app.config['WTF_CSRF_ENABLED'] = False
@@ -43,12 +44,17 @@ class TestGameEvents(unittest.TestCase):
         #Add a clientid and apikey
         new_client = models.Client("myclientid", "myapikey")     
         
-        
-        #Adding one gaming session and one game event
+        #Adding one gaming session 
         new_gamingsession = models.GamingSession("aaaa", "myclientid")
+        
+        #Generating tokens        
         self.mytoken = new_gamingsession.generate_auth_token()
+        self.mybadtoken = "badlogin" + self.mytoken.decode()[8:]
+        self.mybadtoken = self.mybadtoken.encode("ascii")
         self.myexpiredtoken = new_gamingsession.generate_auth_token(1)
         time.sleep(3) #expire the token
+        
+        
         
         new_gamingsession2 = models.GamingSession('bbbb', "myclientid")
         new_gamingsession2.status = False
@@ -75,7 +81,8 @@ class TestGameEvents(unittest.TestCase):
     def tearDownClass(self):
         db.session.remove()
         db.drop_all()
-        
+    
+    
     def test_login_existing_sid(self):
         """Make a test request for a login with valid credentials and existing sessionid.
         """
@@ -86,6 +93,7 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "200 OK")
+    
     
     def test_login_nonexisting_but_valid_sid(self):
         """Make a test request for a login with valid credentials and a valid - but still not in the db - sessionid.
@@ -110,6 +118,7 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "401 UNAUTHORIZED")
     
+    
     def test_badlogin(self):
         """Make a test request with invalid/missing parameters.
         """
@@ -120,6 +129,78 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
         # Assert response is 400 BAD REQUEST.                                           
         self.assertEquals(response.status, "400 BAD REQUEST")
+        
+    
+    def test_commit_gameevent_validtoken(self):
+        token = self.mytoken.decode()
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        timestamp = str(datetime.datetime.now())       
+        
+        requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
+        app.logger.debug(requestdata)
+        response = self.app.post('/gameevents/api/v1.0/commitevent', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+
+        self.assertEquals(response.status, "201 CREATED")
+    
+    
+    def test_commit_gameevent_expiredtoken(self):
+        token = self.myexpiredtoken.decode()
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        timestamp = str(datetime.datetime.now())       
+        
+        requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
+        app.logger.debug(requestdata)
+        response = self.app.post('/gameevents/api/v1.0/commitevent', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+    
+    
+    def test_commit_gameevent_badtoken(self):
+        token = self.mybadtoken.decode()
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        timestamp = str(datetime.datetime.now())       
+        
+        requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
+        app.logger.debug(requestdata)
+        response = self.app.post('/gameevents/api/v1.0/commitevent', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
         
 if __name__ == '__main__':
     unittest.main()

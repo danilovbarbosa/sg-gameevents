@@ -18,7 +18,7 @@ from itsdangerous import BadSignature, SignatureExpired
 #     #sessionid = uuid.UUID(bytes = M2Crypto.m2.rand_bytes(num_bytes=16))
 #     return sessionid
 
-def authenticate(clientid_or_token, apikey, sessionid):
+def authenticate(clientid_or_token, apikey=False, sessionid=False):
     """Takes a client_id + apikey + sessionid and checks if it is a valid combination OR
     a token. Returns the token.
     """
@@ -30,27 +30,33 @@ def authenticate(clientid_or_token, apikey, sessionid):
     try:
         gamingsession = models.GamingSession.verify_auth_token(token)
         if gamingsession and ("sessionid" in gamingsession):
-            app.logger.debug("Got a valid token. Now I know the sessionid and clientid. Going to check if they are in the db.")
+            app.logger.debug("Got a valid token. Now I know the sessionid and clientid.")
             sessionid = gamingsession["sessionid"]
             clientid = gamingsession["clientid"]
-            if (models.GamingSession.query.filter(clientid = clientid, sessionid=sessionid).first()):
+            app.logger.debug("Sessionid '%s'; clientid '%s'. Checking if this is a valid pair..." % (sessionid, clientid))
+            if (models.GamingSession.query.filter_by(clientid = clientid, sessionid=sessionid).first()):
                 app.logger.debug("Valid combination of sessionid/clientid, return true.")
                 return token
             else:
                 app.logger.debug("This combination is not in the db. Bad token!")
                 return False
         else:
-            app.logger.debug("NOT a valid token. Gonna try clientid+apikey+sessionid...")
-            clientid = clientid_or_token
-            client = models.Client(clientid, apikey)         
+            app.logger.debug("NOT a valid token.")
+            if (apikey):
+                app.logger.debug("Apikey provided, trying to authenticate client...")
+                clientid = clientid_or_token
+                client = models.Client(clientid, apikey)         
            
-            if (client.verify_apikey(apikey)):
-                app.logger.debug("Clientid and apikey are valid. Continuing...")
+                if (client.verify_apikey(apikey)):
+                    app.logger.debug("Clientid and apikey are valid. Continuing...")
+                else:
+                    return False
             else:
+                app.logger.debug("Apikey not provided, returning false...")
                 return False
     except Exception as e:
         app.logger.error("Unexpected failure when trying to authenticate token and/or clientid+apikey+sessionid")
-        app.logger.error(e.args, exc_info=False)
+        app.logger.error(e.args, exc_info=True)
         raise e
 
     # Now I should have sessionid and clientid. I can see if they are valid
@@ -66,7 +72,7 @@ def authenticate(clientid_or_token, apikey, sessionid):
             return False
     except Exception as e:
         app.logger.error("Unexpected failure when checking the sessionid/clientid.")
-        app.logger.error(e.args, exc_info=False)
+        app.logger.error(e.args, exc_info=True)
         raise e
 
 def newclient(clientid, apikey):
@@ -90,53 +96,53 @@ def newclient(clientid, apikey):
         return False
     
     
-def startgamingsession(sessionid):
-    new_gamingsession = models.GamingSession(sessionid)
-    db.session.add(new_gamingsession)
-    #db.session.commit()
+# def startgamingsession(sessionid):
+#     new_gamingsession = models.GamingSession(sessionid)
+#     db.session.add(new_gamingsession)
+#     #db.session.commit()
+# 
+#     try:
+#         db.session.commit()
+#         return new_gamingsession.id
+#     except Exception as e:
+#         app.logger.warning(e)
+#         db.session.rollback()
+#         db.session.flush() # for resetting non-commited .add()
+#         return False
 
-    try:
-        db.session.commit()
-        return new_gamingsession.id
-    except Exception as e:
-        app.logger.warning(e)
-        db.session.rollback()
-        db.session.flush() # for resetting non-commited .add()
-        return False
 
-
-def getgamingsessionstatus(sessionid):
-    try:
-        query = db.session.query(models.GamingSession).filter(models.GamingSession.id == sessionid)
-        res = query.one()
-        return res.status
-    except NoResultFound as e:
-        raise NoResultFound('This gaming session ID does not exist.') 
+# def getgamingsessionstatus(sessionid):
+#     try:
+#         query = db.session.query(models.GamingSession).filter(models.GamingSession.id == sessionid)
+#         res = query.one()
+#         return res.status
+#     except NoResultFound as e:
+#         raise NoResultFound('This gaming session ID does not exist.') 
         
 
     
-def isexistinggamingsession(sessionid):
-    query = db.session.query(models.GamingSession).filter(models.GamingSession.id == sessionid)
-    res = query.count()
-    if res >= 1:
-        return True
-    else:
-        return False
+# def isexistinggamingsession(sessionid):
+#     query = db.session.query(models.GamingSession).filter(models.GamingSession.id == sessionid)
+#     res = query.count()
+#     if res >= 1:
+#         return True
+#     else:
+#         return False
     
-def finishgamingsession(sessionid):
-    return False
+# def finishgamingsession(sessionid):
+#     return False
 
-def getgameevents(sessionid):
-    if isexistinggamingsession(sessionid):
-        query = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == sessionid)
-        res = query.all()
-        return res
-    else:
-        raise NoResultFound('This gaming session ID does not exist.')
+# def getgameevents(sessionid):
+#     if isexistinggamingsession(sessionid):
+#         query = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == sessionid)
+#         res = query.all()
+#         return res
+#     else:
+#         raise NoResultFound('This gaming session ID does not exist.')
     
 def recordgameevent(token, timestamp, gameevent):
     app.logger.debug("Trying to authenticate token...")
-    if not authenticate(token, False):
+    if not authenticate(token):
         app.logger.warning("User tried to use an invalid token.")
         raise AuthenticationFailed('Unauthorized token.')
     else:
@@ -162,11 +168,11 @@ def recordgameevent(token, timestamp, gameevent):
             return successful
             
     
-def __inactivategamingsession(sessionid):
-    return False
+# def __inactivategamingsession(sessionid):
+#     return False
     
-def __getlastgamingsessionid():
-    return False
+# def __getlastgamingsessionid():
+#     return False
 
 def check_sessionid(sessionid, clientid):
     """Checks if sessionid exists in db. If yes, returns true.
@@ -200,7 +206,7 @@ def check_sessionid(sessionid, clientid):
                 app.logger.debug("Sessionid is NOT authorized by user profiling service.")
                 return False
     except Exception as e:
-        app.logger.error(e.args)
+        app.logger.error(e, exc_info=True)
         raise e
     
 def _is_valid_sessionid(sessionid):

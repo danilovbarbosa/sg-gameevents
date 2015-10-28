@@ -62,12 +62,16 @@ class Client(db.Model):
     """
 
 class GamingSession(db.Model):
-    """"""
+    """Models 'gamingsession' table in the database. Has columns id (UUID), sessionid (string) and a
+    clientid (referencing the client database). It has a back reference to the list of game events
+    associated to this gaming session.
+     """
     __tablename__ = "gamingsession"
  
-    id = db.Column(db.Integer, primary_key=True)
+    #id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String, primary_key=True)
     sessionid = db.Column(db.String)
-    status = db.Column(db.Boolean)
+    #status = db.Column(db.Boolean)
     clientid = db.Column(db.Integer, db.ForeignKey('client.id'))
     gameevents = db.relationship("GameEvent", backref="gamingsession")
  
@@ -75,13 +79,14 @@ class GamingSession(db.Model):
     
     def __init__(self, sessionid, clientid):
         """"""
-        self.status = True
+        self.id = uuid.UUID(bytes = OpenSSL.rand.bytes(16)).hex
+        #self.status = True
         self.sessionid = sessionid
         self.clientid = clientid
         
     def __eq__(self, other):
         return (self.id == other.id and 
-                self.status == other.status and 
+                #self.status == other.status and 
                 self.sessionid == other.sessionid and 
                 self.clientid == other.clientid)
     
@@ -90,10 +95,13 @@ class GamingSession(db.Model):
         s = Serializer(app.config['SECRET_KEY'])
         try:
             data = s.loads(token)
+            app.logger.debug("Got data: %s " % data)
+            return dict(sessionid=data['sessionid'], clientid=data['clientid'], id=data['id'])
         except SignatureExpired as e:
-            app.logger.debug("Expired token, raising exception")
-            raise e
-            #return False # valid token, but expired
+            app.logger.debug("Expired token, returnin false")
+            app.logger.debug(e, exc_info=False)
+            #raise e
+            return False # valid token, but expired
         except BadSignature as e:
             app.logger.debug("Invalid token, returning false.")
             app.logger.debug(e, exc_info=False)
@@ -103,10 +111,6 @@ class GamingSession(db.Model):
             app.logger.error(e, exc_info=False)
             raise e
         
-        sessionid = GamingSession.query.get(data['sessionid'])    
-        clientid = GamingSession.query.get(data['clientid'])
-        id =  GamingSession.query.get(data['id'])
-        return dict(sessionid=sessionid, clientid=clientid, id=id)
     
     def generate_auth_token(self, expiration = 600):        
         s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
@@ -114,10 +118,12 @@ class GamingSession(db.Model):
     
     
 class GameEvent(db.Model):
-    """"""
+    """Models 'gameevent' table in the database. Has columns id (UUID), gameevent (string) and 
+    gamingsessionid (a foreign key).
+    """
     __tablename__ = "gameevent"
  
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String, primary_key=True)
     gameevent = db.Column(db.String)    
 
     gamingsession_id = db.Column(db.Integer, db.ForeignKey('gamingsession.id'))
@@ -125,6 +131,7 @@ class GameEvent(db.Model):
     #----------------------------------------------------------------------
     def __init__(self, gamingsessionid, gameevent):
         """"""
+        self.id = uuid.UUID(bytes = OpenSSL.rand.bytes(16)).hex
         self.gamingsession_id = gamingsessionid
         self.gameevent = gameevent
         
