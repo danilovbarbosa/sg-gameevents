@@ -135,3 +135,17 @@ def commitevent():
             app.logger.error("Undefined exception when trying to record a game event.")
             app.logger.error(e, exc_info=False)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            
+@app.route('/gameevents/api/v1.0/events', methods=['POST'])
+def get_events():
+    """Lists all game events associated to a gaming session. Requires a valid token and a valid sessionid.
+    """
+    #Check if request is json and contains all the required fields
+    required_fields = ["token", "sessionid"]
+    if not request.json or not (set(required_fields).issubset(request.json)): 
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST  
+    else:
+        sessionid =  request.json['sessionid']
+        gameevents = controller.getgameevents(sessionid)
+        results = [ gameevent.as_dict() for gameevent in gameevents ]
+        return jsonify({'count': len(results), 'results': results}), status.HTTP_200_OK

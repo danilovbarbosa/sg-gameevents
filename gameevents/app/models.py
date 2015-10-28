@@ -124,8 +124,7 @@ class GameEvent(db.Model):
     __tablename__ = "gameevent"
  
     id = db.Column(db.String, primary_key=True)
-    gameevent = db.Column(db.String)    
-
+    gameevent = db.Column(db.String)
     gamingsession_id = db.Column(db.Integer, db.ForeignKey('gamingsession.id'))
  
     #----------------------------------------------------------------------
@@ -140,3 +139,11 @@ class GameEvent(db.Model):
     
     def __eq__(self, other):
         return self.id == other.id and self.gameevent == other.gameevent and self.gamingsession_id == other.gamingsession_id
+    
+    def as_dict(self):
+        obj_d = {
+            'id': self.id,
+            'gamingsession_id': self.gamingsession_id,
+            'gameevent': self.gameevent
+        }
+        return obj_d

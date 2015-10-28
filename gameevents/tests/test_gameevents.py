@@ -26,7 +26,8 @@ app.logger.info('Game Events Service Start Up - Debugging')
 
 
 class TestGameEvents(unittest.TestCase):
-    
+    """TODO: Create some tests trying to add duplicate data
+    """
     @classmethod
     def setUpClass(self):
         app.logger.info("Initializing tests.")
@@ -68,13 +69,16 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        new_gameevent = models.GameEvent("aaaa",gameevent)
+        new_gameevent = models.GameEvent(new_gamingsession.id,gameevent)
         
         db.session.add(new_gamingsession)
         db.session.add(new_gamingsession2)
         db.session.add(new_gameevent)
         db.session.add(new_client)
-        db.session.commit()   
+        try:
+            db.session.commit()
+        except Exception as e:
+            app.logger.error(e, exc_info=True)
 
     
     @classmethod
@@ -201,6 +205,19 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
 
         self.assertEquals(response.status, "401 UNAUTHORIZED")
+        
+    def test_getgameevents(self):
+        token = self.mytoken.decode()
+        sessionid = "aaaa"
+        requestdata = json.dumps(dict(token=token, sessionid=sessionid))
+        app.logger.debug(requestdata)
+        response = self.app.post('/gameevents/api/v1.0/events', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        app.logger.warning(response.get_data())
+        self.assertEquals(response.status, "200 OK")
+        
         
 if __name__ == '__main__':
     unittest.main()

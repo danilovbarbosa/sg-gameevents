@@ -132,13 +132,18 @@ def newclient(clientid, apikey):
 # def finishgamingsession(sessionid):
 #     return False
 
-# def getgameevents(sessionid):
-#     if isexistinggamingsession(sessionid):
-#         query = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == sessionid)
-#         res = query.all()
-#         return res
-#     else:
-#         raise NoResultFound('This gaming session ID does not exist.')
+def getgameevents(sessionid):
+    try:
+        #Is this a valid session id?
+        query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid)
+        res_sessionid = query_sessionid.one()
+        if (res_sessionid):
+            query_events = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == res_sessionid.id)
+            res_events = query_events.all()
+        return res_events
+    except Exception as e:
+        app.logger.error(e, exc_info=True)
+        raise e
     
 def recordgameevent(token, timestamp, gameevent):
     app.logger.debug("Trying to authenticate token...")
