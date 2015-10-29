@@ -9,7 +9,7 @@ from app import app, db
 from app import models, controller, errors
 
 from app.errors import InvalidGamingSession
-from sqlalchemy.orm.exc import NoResultFound
+#from sqlalchemy.orm.exc import NoResultFound
 #from flask.ext.api.exceptions import AuthenticationFailed
 
 # Logging:
