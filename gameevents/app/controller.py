@@ -132,45 +132,59 @@ def newclient(clientid, apikey):
 # def finishgamingsession(sessionid):
 #     return False
 
-def getgameevents(sessionid):
+def getgameevents(token):
     try:
-        #Is this a valid session id?
-        query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid)
-        res_sessionid = query_sessionid.one()
-        if (res_sessionid):
-            query_events = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == res_sessionid.id)
-            res_events = query_events.all()
-        return res_events
+        #Is this a valid token?
+        gamingsession = models.GamingSession.verify_auth_token(token)
+        if gamingsession and ("sessionid" in gamingsession):
+            sessionid = gamingsession["sessionid"]
+            app.logger.debug("sessionid: " + sessionid)
+            query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid)
+            res_sessionid = query_sessionid.one()
+            if (res_sessionid):
+                app.logger.debug("sessionid_id: " + res_sessionid.id)
+                query_events = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == res_sessionid.id)
+                res_events = query_events.all()
+                app.logger.debug(res_events)
+            return res_events
+        else:
+            app.logger.warning("User tried to use an invalid token.")
+            raise AuthenticationFailed('Unauthorized token.') 
     except Exception as e:
         app.logger.error(e, exc_info=True)
         raise e
     
 def recordgameevent(token, timestamp, gameevent):
-    app.logger.debug("Trying to authenticate token...")
-    if not authenticate(token):
-        app.logger.warning("User tried to use an invalid token.")
-        raise AuthenticationFailed('Unauthorized token.')
-    else:
-        app.logger.debug("Token valid, continuing...")
-        if False: #not getgamingsessionstatus(sessionid):
-            raise InvalidGamingSession('This gaming session is invalid.')
+    try:
+        #Is this a valid token?
+        app.logger.debug("Verifying token...")
+        gamingsession = models.GamingSession.verify_auth_token(token)
+        if gamingsession and ("sessionid" in gamingsession):
+            sessionid = gamingsession["sessionid"]
+            app.logger.debug("sessionid: " + sessionid)
+            query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid)
+            res_sessionid = query_sessionid.one()
+            if (res_sessionid):
+                app.logger.debug("sessionid_id: " + res_sessionid.id)
+                app.logger.debug("Trying to record the game event.")
+                new_gameevent = models.GameEvent(sessionid, gameevent)
+                db.session.add(new_gameevent)
+                try:
+                    db.session.commit()
+                    return True
+                except Exception as e:
+                    app.logger.warning(e)
+                    db.session.rollback()
+                    db.session.flush() # for resetting non-commited .add()
+                    app.logger.error(e, exc_info=True)
+                    raise e                
         else:
-            app.logger.warning("Trying to record the game event.")
-            '''
-            new_gameevent = models.GameEvent(sessionid, gameevent)
-            db.session.add(new_gameevent)
-            successful = False
-            try:
-                db.session.commit()
-                successful = True
-            except Exception as e:
-                app.logger.warning(e)
-                db.session.rollback()
-                db.session.flush() # for resetting non-commited .add()
-                successful = False
-                '''
-            successful = True
-            return successful
+            app.logger.warning("User tried to use an invalid token.")
+            raise AuthenticationFailed('Unauthorized token.') 
+    except Exception as e:
+        app.logger.error(e, exc_info=True)
+        raise e
+
             
     
 # def __inactivategamingsession(sessionid):

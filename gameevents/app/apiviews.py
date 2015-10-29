@@ -116,10 +116,12 @@ def commitevent():
     required_fields = ["token", "gameevent", "timestamp"]
     if not request.json or not (set(required_fields).issubset(request.json)):  
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
-    else:    
+    else:
+        app.logger.debug("Request is valid. continuing...")
         try:
             #app.logger.debug("trying to expire the token.")
             #time.sleep(5) #expire the token
+            app.logger.debug(request.json)
             success = controller.recordgameevent(request.json['token'], request.json['timestamp'], request.json['gameevent']) 
             if success:
                 app.logger.info("Successfully recorded a game event.")
@@ -129,8 +131,8 @@ def commitevent():
                 abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
             #    return jsonify({'message': 'Sorry, could not process your request.'}), status.HTTP_500_INTERNAL_SERVER_ERROR
         except AuthenticationFailed as e:
-            app.logger.warning("Authentication failure when trying to record game event.")          
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': e.args}) # missing arguments   
+            app.logger.warning("Authentication failure when trying to record game event.")   
+            return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED    
         except Exception as e:
             app.logger.error("Undefined exception when trying to record a game event.")
             app.logger.error(e, exc_info=False)
@@ -138,14 +140,23 @@ def commitevent():
             
 @app.route('/gameevents/api/v1.0/events', methods=['POST'])
 def get_events():
-    """Lists all game events associated to a gaming session. Requires a valid token and a valid sessionid.
+    """Lists all game events associated to a gaming session. Requires a valid token.
     """
     #Check if request is json and contains all the required fields
-    required_fields = ["token", "sessionid"]
+    required_fields = ["token"]
     if not request.json or not (set(required_fields).issubset(request.json)): 
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST  
     else:
-        sessionid =  request.json['sessionid']
-        gameevents = controller.getgameevents(sessionid)
-        results = [ gameevent.as_dict() for gameevent in gameevents ]
-        return jsonify({'count': len(results), 'results': results}), status.HTTP_200_OK
+        token =  request.json['token']
+        try:
+            gameevents = controller.getgameevents(token)
+            results = [ gameevent.as_dict() for gameevent in gameevents ]
+            return jsonify({'count': len(results), 'results': results}), status.HTTP_200_OK
+        except AuthenticationFailed as e:
+            app.logger.warning("Authentication failure when trying to read game events for a token.")
+            return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED  
+        except Exception as e:
+            app.logger.error("Undefined exception when trying to read game events for a token.")
+            app.logger.error(e, exc_info=False)
+            abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
+    

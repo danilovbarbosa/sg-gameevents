@@ -6,9 +6,9 @@ import json
 
 from config import basedir, TMPDIR
 from app import app, db
-from app import models, controller, errors
+from app import models#, controller, errors
 
-from app.errors import InvalidGamingSession
+#from app.errors import InvalidGamingSession
 #from sqlalchemy.orm.exc import NoResultFound
 #from flask.ext.api.exceptions import AuthenticationFailed
 
@@ -16,11 +16,11 @@ from app.errors import InvalidGamingSession
 import logging
 from logging.handlers import RotatingFileHandler
  
-file_handler_debug = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-unittests.log.txt'), 'a', 1 * 1024 * 1024, 10)
-file_handler_debug.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-#file_handler_debug.setLevel(logging.DEBUG)
-file_handler_debug.setLevel(logging.INFO)
-app.logger.addHandler(file_handler_debug)
+file_handler_tests = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-unittests.log.txt'), 'a', 1 * 1024 * 1024, 10)
+file_handler_tests.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+file_handler_tests.setLevel(logging.DEBUG)
+#file_handler_tests.setLevel(logging.INFO)
+app.logger.addHandler(file_handler_tests)
 app.logger.info('Game Events Service Start Up - Debugging')
 
 
@@ -30,7 +30,7 @@ class TestGameEvents(unittest.TestCase):
     """
     @classmethod
     def setUpClass(self):
-        app.logger.info("Initializing tests.")
+        app.logger.warning("Initializing tests.")
         app.config['TESTING'] = True
         app.debug = True
         app.config['WTF_CSRF_ENABLED'] = False
@@ -208,8 +208,7 @@ class TestGameEvents(unittest.TestCase):
         
     def test_getgameevents(self):
         token = self.mytoken.decode()
-        sessionid = "aaaa"
-        requestdata = json.dumps(dict(token=token, sessionid=sessionid))
+        requestdata = json.dumps(dict(token=token))
         app.logger.debug(requestdata)
         response = self.app.post('/gameevents/api/v1.0/events', 
                                  data=requestdata, 
@@ -218,6 +217,16 @@ class TestGameEvents(unittest.TestCase):
         app.logger.warning(response.get_data())
         self.assertEquals(response.status, "200 OK")
         
+    def test_getgameevents_badtoken(self):
+        token = self.mybadtoken.decode()
+        requestdata = json.dumps(dict(token=token))
+        app.logger.debug(requestdata)
+        response = self.app.post('/gameevents/api/v1.0/events', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        app.logger.warning(response.get_data())
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
         
 if __name__ == '__main__':
     unittest.main()

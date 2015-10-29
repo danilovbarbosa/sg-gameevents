@@ -23,9 +23,14 @@ $ python gameevents/run.py
 
 Add a client to the database:
 
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"myclientid","apikey":"myapikey"}' http://localhost:5000/gameevents/api/v1.0/client
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix", "apikey":"lixapikey"}' http://localhost:5000/gameevents/api/v1.0/client
 
 Request a token:
 
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"myclientid","apikey":"myapikey"}' http://localhost:5000/gameevents/api/v1.0/token
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix","apikey":"lixapikey", "sessionid":"aaaa"}' http://localhost:5000/gameevents/api/v1.0/token
 
+Commit an event:
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN","timestamp":"0001","gameevent":"<test></test>"}' http://localhost:5000/gameevents/api/v1.0/commitevent
+
+See events commited in this session:
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN"}' http://localhost:5000/gameevents/api/v1.0/events
