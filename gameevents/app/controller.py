@@ -64,7 +64,7 @@ def authenticate(clientid_or_token, apikey=False, sessionid=False):
     gamingsession = models.GamingSession(sessionid, clientid)
     try:
         if (check_sessionid(sessionid, clientid)):
-            app.logger.debug("Sessionid is valid. Generate a token.")
+            app.logger.debug("Sessionid is valid. Generate a token...")
             token = gamingsession.generate_auth_token()
             return token
         else:

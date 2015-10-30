@@ -14,6 +14,8 @@ from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
 from flask.ext.api.exceptions import AuthenticationFailed
 
+from config import DEFAULT_TOKEN_DURATION
+
 class Client(db.Model):
     """Model "clients" table in the database. 
     It contains id, a clientid, and hashed apikey. Each game/application
@@ -98,7 +100,7 @@ class GamingSession(db.Model):
             app.logger.debug("Got data: %s " % data)
             return dict(sessionid=data['sessionid'], clientid=data['clientid'], id=data['id'])
         except SignatureExpired as e:
-            app.logger.debug("Expired token, returnin false")
+            app.logger.debug("Expired token, returning false")
             app.logger.debug(e, exc_info=False)
             #raise e
             return False # valid token, but expired
@@ -112,8 +114,9 @@ class GamingSession(db.Model):
             raise e
         
     
-    def generate_auth_token(self, expiration = 600):        
+    def generate_auth_token(self, expiration = DEFAULT_TOKEN_DURATION):        
         s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
+        app.logger.debug("Generating token with expiration: %s" % expiration)
         return s.dumps({ 'id': self.id, 'sessionid': self.sessionid, 'clientid' : self.clientid  })
     
     

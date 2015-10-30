@@ -12,5 +12,7 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 
 TMPDIR = os.path.join(basedir, 'tmp')
 
+DEFAULT_TOKEN_DURATION = 600 #IN SECONDS
+
 WTF_CSRF_ENABLED = True
 SECRET_KEY = 'heytheredonottrytomesswithmemister'
