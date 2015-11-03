@@ -1,0 +1,59 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<script type=text/javascript>
+
+$(function() {
+	$( document ).ready(function() {
+		var url = $SCRIPT_ROOT + "/get_events/{{ sessionid }}";
+		
+		$.getJSON( url )
+		  .done(function( json ) {
+		  	build_table(json.data);
+		    //console.log( "JSON Data: " + json.data );
+		  })
+		  .fail(function( jqxhr, textStatus, error ) {
+		    var err = textStatus + ", " + error;
+		    console.log( "Request Failed: " + err );
+		    
+		});
+
+
+    }); 
+}); 
+
+function build_table(fulldata) {
+	//alert(fulldata);
+	$.each(fulldata, function(index, data) {
+		var write;		
+	    write += '<tr><td>' + data.timestamp + '</td>';
+	    write += '<td>' + data.level + '</td>';
+	    write += '<td>' + data.action + '</td></tr>';
+	      //$('#overview').html(write);
+	      //alert(write);
+	    $('#overview > tbody').append(write);
+	}); //end each
+}
+
+		  
+</script> 
+
+  
+
+  
+	  <table id="overview" border="1">
+		  <thead>
+		    <tr>
+		        <th>Timestamp</th>
+		        <th>Level</th>
+		        <th>Action</th>
+		    </tr>
+		    </thead>
+	    <tbody>
+	    </tbody>
+	
+	    </table>
+{% endblock %}
+	    

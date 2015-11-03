@@ -7,6 +7,7 @@
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
 <path>/${PROJECT_DIR_NAME}/assessadapt</path>
 <path>/${PROJECT_DIR_NAME}/gameevents</path>
+<path>/${PROJECT_DIR_NAME}/dashboard</path>
 </pydev_pathproperty>
 
 </pydev_project>

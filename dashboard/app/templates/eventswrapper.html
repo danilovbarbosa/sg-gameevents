@@ -1,0 +1,36 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+
+<script type=text/javascript>
+
+
+
+$(function() {
+    startRefresh();
+});
+
+function startRefresh() {
+    setTimeout(startRefresh,10000);
+    var url = $SCRIPT_ROOT + "/events/" + $('input[name="sessionid"]').val();
+    $.get(url, function(data) {
+        $('#mytablediv').html(data);    
+    });
+}
+
+
+			  
+</script>
+
+<h1>get data for session</h1>
+
+
+<p><input type=text size=15 name=sessionid>
+<p><a href=# id=get_events>Get game events</a>
+	    
+<div id="mytablediv">
+</div>
+
+  
+{% endblock %}
