@@ -37,9 +37,10 @@ if not app.debug:
     file_handler_debug = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-debug.log.txt'), 'a', 1 * 1024 * 1024, 10)
     file_handler_debug.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
     #file_handler_debug.setLevel(logging.DEBUG)
+    
     file_handler_debug.setLevel(logging.DEBUG)
-    app.logger.addHandler(file_handler_debug)
-    app.logger.info('Game Events Service Start Up - Debugging')
+    #app.logger.addHandler(file_handler_debug)
+    #app.logger.info('Game Events Service Start Up - Debugging')
 else:
     pass
 

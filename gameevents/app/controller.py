@@ -9,6 +9,7 @@ from app import app, db, models
 from app.errors import InvalidGamingSession, TokenExpired
 from flask.ext.api.exceptions import AuthenticationFailed
 from sqlalchemy.orm.exc import NoResultFound 
+from flask import jsonify
 
 from itsdangerous import BadSignature, SignatureExpired
 
@@ -138,14 +139,9 @@ def getgameevents(token):
         gamingsession = models.GamingSession.verify_auth_token(token)
         if gamingsession and ("sessionid" in gamingsession):
             sessionid = gamingsession["sessionid"]
-            app.logger.debug("sessionid: " + sessionid)
-            query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid)
-            res_sessionid = query_sessionid.one()
-            if (res_sessionid):
-                app.logger.debug("sessionid_id: " + res_sessionid.id)
-                query_events = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == res_sessionid.id)
-                res_events = query_events.all()
-                app.logger.debug(res_events)
+            query_events = db.session.query(models.GameEvent).filter(models.GameEvent.gamingsession_id == sessionid)
+            res_events = query_events.all()
+            app.logger.debug("Found %s results." % len(res_events))
             return res_events
         else:
             app.logger.warning("User tried to use an invalid token.")
@@ -159,10 +155,11 @@ def recordgameevent(token, timestamp, gameevent):
         #Is this a valid token?
         app.logger.debug("Verifying token...")
         gamingsession = models.GamingSession.verify_auth_token(token)
-        if gamingsession and ("sessionid" in gamingsession):
+        if gamingsession and ("sessionid" in gamingsession) and ("clientid" in gamingsession):
             sessionid = gamingsession["sessionid"]
+            clientid = gamingsession["clientid"]
             app.logger.debug("sessionid: " + sessionid)
-            query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid)
+            query_sessionid = db.session.query(models.GamingSession).filter(models.GamingSession.sessionid == sessionid, models.GamingSession.clientid == clientid)
             res_sessionid = query_sessionid.one()
             if (res_sessionid):
                 app.logger.debug("sessionid_id: " + res_sessionid.id)

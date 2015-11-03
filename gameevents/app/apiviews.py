@@ -150,11 +150,16 @@ def get_events():
         token =  request.json['token']
         try:
             gameevents = controller.getgameevents(token)
+            num_results = len(gameevents)
+            app.logger.debug("number of results: %s" % num_results)
             results = [ gameevent.as_dict() for gameevent in gameevents ]
-            return jsonify({'count': len(results), 'results': results}), status.HTTP_200_OK
+            app.logger.debug(results)
+            return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
+            
         except AuthenticationFailed as e:
             app.logger.warning("Authentication failure when trying to read game events for a token.")
             return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED  
+        
         except Exception as e:
             app.logger.error("Undefined exception when trying to read game events for a token.")
             app.logger.error(e, exc_info=False)
