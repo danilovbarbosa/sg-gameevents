@@ -1,5 +1,5 @@
-# sg-assess-adapt
-An assessment and adaptation module for service-based serious games
+# sg-gameevents
+A module for service-based serious games that listen for game events coming from games.
 
 ## Requires
 
