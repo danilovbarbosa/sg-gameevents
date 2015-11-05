@@ -46,12 +46,19 @@ def authenticate(clientid_or_token, apikey=False, sessionid=False):
             if (apikey):
                 app.logger.debug("Apikey provided, trying to authenticate client...")
                 clientid = clientid_or_token
-                client = models.Client(clientid, apikey)         
-           
-                if (client.verify_apikey(apikey)):
-                    app.logger.debug("Clientid and apikey are valid. Continuing...")
-                else:
+                #client = models.Client(clientid, apikey)
+                
+                #Check if client is in the database
+                client = models.Client.query.filter_by(clientid = clientid).first()
+                if not client:
+                    app.logger.debug("Client not in database.")
                     return False
+                else:
+                    if (not client.verify_apikey(apikey)):
+                        app.logger.debug("Wrong credentials.")
+                        return False
+                    else:
+                        app.logger.debug("Good credentials, continuing...")
             else:
                 app.logger.debug("Apikey not provided, returning false...")
                 return False

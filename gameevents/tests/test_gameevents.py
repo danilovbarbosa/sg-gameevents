@@ -4,6 +4,9 @@ import time
 import datetime
 import json
 
+import sys
+sys.path.append("..") 
+
 from config import basedir, TMPDIR
 from app import app, db
 from app import models#, controller, errors
@@ -121,6 +124,8 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "401 UNAUTHORIZED")
+        
+        
     
     
     def test_badlogin(self):
@@ -133,6 +138,29 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
         # Assert response is 400 BAD REQUEST.                                           
         self.assertEquals(response.status, "400 BAD REQUEST")
+        
+        
+    def test_invalid_apikey(self):
+        """Make a test request for a login with valid client id, invalid apikey and valid sessionid.
+        """
+        requestdata = json.dumps(dict(clientid="myclientidaaaaa", apikey="myapikeyaaaa", sessionid="aaaa"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+ 
+    def test_invalid_clientid(self):
+        """Make a test request for a login with invalid client id and valid sessionid.
+        """
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikeyaaaa", sessionid="aaaa"))
+        response = self.app.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "401 UNAUTHORIZED")       
         
     
     def test_commit_gameevent_validtoken(self):

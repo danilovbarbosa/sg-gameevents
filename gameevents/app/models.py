@@ -37,6 +37,7 @@ class Client(db.Model):
         #self.token = None
 
     def verify_apikey(self, apikey):
+        app.logger.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
         return pwd_context.verify(apikey, self.apikey_hash)
 
     '''
