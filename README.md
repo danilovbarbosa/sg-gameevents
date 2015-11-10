@@ -21,9 +21,10 @@ Run the server
 
 $ python gameevents/run.py
 
-Add a client to the database:
+Add clients to the database:
 
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix", "apikey":"lixapikey"}' http://localhost:5000/gameevents/api/v1.0/client
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"dashboard", "apikey":"dashboardapikey"}' http://localhost:5000/gameevents/api/v1.0/client
 
 Request a token:
 

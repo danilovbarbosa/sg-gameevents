@@ -17,7 +17,7 @@ from app.errors import TokenExpired, InvalidGamingSession
 
 
 from app import controller
-from app.models import Client
+from app.models.client import Client
 
 from flask.ext.api.exceptions import AuthenticationFailed
 
