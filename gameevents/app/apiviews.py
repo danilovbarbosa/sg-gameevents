@@ -164,4 +164,42 @@ def get_events():
             app.logger.error("Undefined exception when trying to read game events for a token.")
             app.logger.error(e, exc_info=False)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            
+@app.route('/gameevents/api/v1.0/sessions', methods = ['POST'])
+def sessions():
+    """The client can request a list of active sessions. The POST request must be sent as JSON 
+    and include a valid "clientid" and "apikey".       
+    """
+
+    #Check if request is json and contains all the required fields
+    required_fields = ["clientid", "apikey"]
+    if not request.json or not (set(required_fields).issubset(request.json)): 
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST      
+    else:
+        clientid = request.json['clientid']
+        apikey = request.json['apikey']
+        
+        try:
+            token = controller.authenticate(clientid, apikey)
+            if token:
+                sessions = controller.getsessions()
+                num_results = len(sessions)
+                app.logger.debug("number of results: %s" % num_results)
+                results = [ session.as_dict() for session in sessions ]
+                app.logger.debug(results)
+                return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
+            
+            else:
+                app.logger.debug("Could not authenticate, returning status 401.")
+                return jsonify({'message': 'Could not authenticate.'}), status.HTTP_401_UNAUTHORIZED
+        except AuthenticationFailed as e:
+            app.logger.warning(e.args)
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
+        except TokenExpired as e:
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
+        except InvalidGamingSession as e:
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
+        except Exception as e:
+            app.logger.error(e, exc_info=False)
+            abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
     

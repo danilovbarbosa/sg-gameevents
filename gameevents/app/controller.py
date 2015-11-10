@@ -240,3 +240,13 @@ def _is_valid_sessionid(sessionid):
         return True
     else:
         return False
+    
+def getsessions():
+    try:
+        query = db.session.query(models.GamingSession)
+        res_sessions = query.all()
+        return res_sessions
+    except Exception as e:
+        app.logger.error(e, exc_info=True)
+        raise e
+        

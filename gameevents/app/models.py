@@ -93,6 +93,13 @@ class GamingSession(db.Model):
                 self.sessionid == other.sessionid and 
                 self.clientid == other.clientid)
     
+    def as_dict(self):
+        obj_d = {
+            'id': self.id,
+            'sessionid': self.sessionid,
+        }
+        return obj_d
+    
     @staticmethod
     def verify_auth_token(token):
         s = Serializer(app.config['SECRET_KEY'])
