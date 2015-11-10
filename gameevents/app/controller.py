@@ -11,7 +11,7 @@ from app.models.gameevent import GameEvent
 
 #from app.errors import InvalidGamingSession, TokenExpired
 from flask.ext.api.exceptions import AuthenticationFailed
-#from sqlalchemy.orm.exc import NoResultFound 
+from sqlalchemy.orm.exc import NoResultFound 
 #from flask import jsonify
 
 #from itsdangerous import BadSignature, SignatureExpired
@@ -28,8 +28,10 @@ def authenticate(clientid_or_token, apikey=False, sessionid=False):
     token = clientid_or_token
     try:
         gamingsession = GamingSession.verify_auth_token(token)
-        if gamingsession and ("sessionid" in gamingsession):
-            app.logger.debug("Got a valid token. Now I know the sessionid and clientid.")
+        app.logger.debug(gamingsession)
+        if gamingsession:
+            app.logger.debug("Got a valid token. Now I know the clientid.")
+            app.logger.debug(gamingsession)
             sessionid = gamingsession["sessionid"]
             clientid = gamingsession["clientid"]
             app.logger.debug("Sessionid '%s'; clientid '%s'. Checking if this is a valid pair..." % (sessionid, clientid))
@@ -65,21 +67,40 @@ def authenticate(clientid_or_token, apikey=False, sessionid=False):
         app.logger.error(e.args, exc_info=True)
         raise e
 
-    # Now I should have sessionid and clientid. I can see if they are valid
-    app.logger.debug("Now I have sessionid (%s) and clientid (%s). All I need now is to check if this sessionid is valid." % (sessionid, clientid))
-    gamingsession = GamingSession(sessionid, clientid)
-    try:
-        if (check_sessionid(sessionid, clientid)):
-            app.logger.debug("Sessionid is valid. Generate a token...")
-            token = gamingsession.generate_auth_token()
+    
+    #Is client an admin?
+    is_client_admin = is_admin(clientid) 
+    if (is_client_admin and sessionid == False):
+        try:
+            client = Client.query.filter_by(clientid = clientid).first()
+            app.logger.debug("Client is admin. Generate a token...")
+            token = client.generate_auth_token()
             return token
-        else:
-            app.logger.debug("Session ID not valid. Returning false.")
-            return False
-    except Exception as e:
-        app.logger.error("Unexpected failure when checking the sessionid/clientid.")
-        app.logger.error(e.args, exc_info=True)
-        raise e
+            
+        except Exception as e:
+            app.logger.error("Unexpected failure when generating token for admin.")
+            app.logger.error(e.args, exc_info=True)
+            raise e
+    elif (is_client_admin==False and sessionid != False):
+        # Now I should have sessionid and clientid. I can see if they are valid
+        app.logger.debug("I have sessionid (%s) and clientid (%s). I need to check if this sessionid is valid." % (sessionid, clientid))
+        #gamingsession = GamingSession(sessionid, clientid)
+        gamingsession = GamingSession(sessionid)
+        try:
+            if (check_sessionid(sessionid, clientid)):
+                app.logger.debug("Sessionid is valid. Generate a token...")
+                token = gamingsession.generate_auth_token(clientid)
+                return token
+            else:
+                app.logger.debug("Session ID not valid. Returning false.")
+                return False
+        except Exception as e:
+            app.logger.error("Unexpected failure when checking the sessionid/clientid.")
+            app.logger.error(e.args, exc_info=True)
+            raise e
+    else:
+        app.logger.debug("Not an admin trying to get token without specific sessionid, returning false")
+        return False
 
 def newclient(clientid, apikey):
     """ Adds a new client to the database.
@@ -103,12 +124,10 @@ def newclient(clientid, apikey):
     
     
 
-def getgameevents(token):
+def getgameevents(token, sessionid):
     try:
-        #Is this a valid token?
-        gamingsession = GamingSession.verify_auth_token(token)
-        if gamingsession and ("sessionid" in gamingsession):
-            sessionid = gamingsession["sessionid"]
+        #Is Client authorized to see this session id?
+        if is_client_authorized(token, sessionid):
             query_events = db.session.query(GameEvent).filter(GameEvent.gamingsession_id == sessionid)
             res_events = query_events.all()
             app.logger.debug("Found %s results." % len(res_events))
@@ -129,7 +148,7 @@ def recordgameevent(token, timestamp, gameevent):
             sessionid = gamingsession["sessionid"]
             clientid = gamingsession["clientid"]
             app.logger.debug("sessionid: " + sessionid)
-            query_sessionid = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid, GamingSession.clientid == clientid)
+            query_sessionid = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid)
             res_sessionid = query_sessionid.one()
             if (res_sessionid):
                 app.logger.debug("sessionid_id: " + res_sessionid.id)
@@ -166,18 +185,32 @@ def check_sessionid(sessionid, clientid):
     it is a valid session id. If yes, adds the sessionid to the local db
     and returns true. If not, returns false. 
     """
-    try:
-        query = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid, 
-                                                              GamingSession.clientid == clientid)
-        res = query.count()
-        if res >= 1:
-            app.logger.debug("Sessionid exists, returning true.")
-            return True
-        else:
+    if (sessionid and clientid):
+        try:
+            gamingsession = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid).one()
+            client = db.session.query(Client).filter(Client.clientid == clientid).one()
+    
+            #Session and client exist. Now, is this clientid authorized to read the session?
+                     
+            res = gamingsession.query.filter(GamingSession.clients.any(clientid=clientid)).all()
+            #res = query.count()
+            if len(res) >= 1:
+                app.logger.debug("Sessionid exists and client is authorized, returning true.")
+                return True
+            else:
+                # Ask the profiling service if this client is authorized to read this sessionid.
+                # If yes, add it to database with an expiration time
+                if (True): #This will be the service replying yes
+                    gamingsession.clients.append(client) 
+                    return True
+                else:
+                    raise AuthenticationFailed("Client not authorized.")
+                
+        except NoResultFound as e:
             app.logger.debug("Sessionid is not in db. Let's ask the user profiling service...")
-            if (_is_valid_sessionid(sessionid)):
+            if (_is_valid_sessionid(sessionid, clientid)):
                 app.logger.debug("User profiling service says it's a good session id! Let's add it to the db.")
-                gamingsession = GamingSession(sessionid, clientid)
+                gamingsession = GamingSession(sessionid)
                 db.session.add(gamingsession)
                 try:
                     db.session.commit()
@@ -188,18 +221,17 @@ def check_sessionid(sessionid, clientid):
                     db.session.rollback()
                     db.session.flush() # for resetting non-commited .add()
                     raise e
-            else:
-                app.logger.debug("Sessionid is NOT authorized by user profiling service.")
-                return False
-    except Exception as e:
-        app.logger.error(e, exc_info=True)
-        raise e
+        except Exception as e:
+            app.logger.error(e, exc_info=True)
+            raise e
+    else:
+        return False
     
-def _is_valid_sessionid(sessionid):
+def _is_valid_sessionid(sessionid, clientid):
     """Asks the userprofile service if the sessionid is valid.
     TODO: write the implementation!
     """
-    if (sessionid != "zzzz"): 
+    if (sessionid != "zzzz" and sessionid != False): 
         return True
     else:
         return False
@@ -212,4 +244,13 @@ def getsessions():
     except Exception as e:
         app.logger.error(e, exc_info=True)
         raise e
+    
+def is_admin(clientid):
+    if (clientid == "dashboard"):
+        return True
+    else: 
+        return False
         
+def is_client_authorized(token, sessionid):
+    #TODO: Implement this function!!! 
+    return True

@@ -5,14 +5,17 @@ Created on 10 Nov 2015
 '''
 
 import uuid, OpenSSL
-
-from itsdangerous import (TimedJSONWebSignatureSerializer
-                           as Serializer, BadSignature, SignatureExpired)
+from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 
 from app import db
 from app import app
 
 from config import DEFAULT_TOKEN_DURATION
+
+gamingsessions_clients = db.Table('gamingsessions_clients',
+    db.Column('gamingsession_id', db.Integer, db.ForeignKey('gamingsession.id')),
+    db.Column('client_id', db.Integer, db.ForeignKey('client.id'))
+)
 
 
 class GamingSession(db.Model):
@@ -26,29 +29,33 @@ class GamingSession(db.Model):
     id = db.Column(db.String, primary_key=True)
     sessionid = db.Column(db.String)
     #status = db.Column(db.Boolean)
-    clientid = db.Column(db.Integer, db.ForeignKey('client.id'))
+    clients = db.relationship("Client", secondary=gamingsessions_clients)
     gameevents = db.relationship("GameEvent", backref="gamingsession")
  
     #----------------------------------------------------------------------
     
-    def __init__(self, sessionid, clientid):
+    def __init__(self, sessionid):
         """"""
         self.id = uuid.UUID(bytes = OpenSSL.rand.bytes(16)).hex
         #self.status = True
         self.sessionid = sessionid
-        self.clientid = clientid
         
     def __eq__(self, other):
-        return (self.id == other.id and 
-                #self.status == other.status and 
-                self.sessionid == other.sessionid and 
-                self.clientid == other.clientid)
+        return (self.id == other.id 
+                and self.sessionid == other.sessionid 
+                #and self.clientid == other.clientid
+                )
     
     def as_dict(self):
+        myclients = []
+        for client in self.clients:
+            myclients.append(client.as_dict())
         obj_d = {
             'id': self.id,
             'sessionid': self.sessionid,
+            'clients': myclients,
         }
+        #app.logger.debug(obj_d)
         return obj_d
     
     @staticmethod
@@ -73,7 +80,9 @@ class GamingSession(db.Model):
             raise e
         
     
-    def generate_auth_token(self, expiration = DEFAULT_TOKEN_DURATION):        
+    def generate_auth_token(self, clientid, expiration = DEFAULT_TOKEN_DURATION):        
         s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
         app.logger.debug("Generating token with expiration: %s" % expiration)
-        return s.dumps({ 'id': self.id, 'sessionid': self.sessionid, 'clientid' : self.clientid  })
+        return s.dumps({ 'id': self.id, 'sessionid': self.sessionid, 'clientid' : clientid  })
+        #return s.dumps({ 'id': self.id, 'sessionid': self.sessionid })
+    

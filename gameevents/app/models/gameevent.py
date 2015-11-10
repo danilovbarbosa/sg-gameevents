@@ -5,20 +5,9 @@ Flask's SQLAlchemy extension (flask.ext.sqlalchemy).
 
 import uuid
 import OpenSSL
-#from passlib.apps import custom_app_context as pwd_context
 
 from app import db
-#from app import app
-#from app.errors import TokenExpired
 
-#from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
-#from flask.ext.api.exceptions import AuthenticationFailed
-
-#from config import DEFAULT_TOKEN_DURATION
-
-
-
-    
     
 class GameEvent(db.Model):
     """Models 'gameevent' table in the database. Has columns id (UUID), gameevent (string) and 
@@ -50,3 +39,4 @@ class GameEvent(db.Model):
             'gameevent': self.gameevent
         }
         return obj_d
+    

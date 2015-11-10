@@ -140,16 +140,17 @@ def commitevent():
             
 @app.route('/gameevents/api/v1.0/events', methods=['POST'])
 def get_events():
-    """Lists all game events associated to a gaming session. Requires a valid token.
+    """Lists all game events associated to a gaming session. Requires a valid token and a sessionid.
     """
     #Check if request is json and contains all the required fields
-    required_fields = ["token"]
+    required_fields = ["token", "sessionid"]
     if not request.json or not (set(required_fields).issubset(request.json)): 
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST  
     else:
         token =  request.json['token']
+        sessionid =  request.json['sessionid']
         try:
-            gameevents = controller.getgameevents(token)
+            gameevents = controller.getgameevents(token, sessionid)
             num_results = len(gameevents)
             app.logger.debug("number of results: %s" % num_results)
             results = [ gameevent.as_dict() for gameevent in gameevents ]
@@ -162,22 +163,34 @@ def get_events():
         
         except Exception as e:
             app.logger.error("Undefined exception when trying to read game events for a token.")
-            app.logger.error(e, exc_info=False)
+            app.logger.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
             
 @app.route('/gameevents/api/v1.0/sessions', methods = ['POST'])
 def sessions():
     """The client can request a list of active sessions. The POST request must be sent as JSON 
-    and include a valid "clientid" and "apikey".       
+    and include a valid "clientid" and "apikey". A "sessionid" is optional.    
     """
+  
 
     #Check if request is json and contains all the required fields
     required_fields = ["clientid", "apikey"]
     if not request.json or not (set(required_fields).issubset(request.json)): 
-        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST      
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST
     else:
+        #check if client submitted a sessionid
         clientid = request.json['clientid']
         apikey = request.json['apikey']
+        
+        if "sessionid" in request.json:
+            sessionid = request.json['sessionid']
+        else:
+            sessionid = False
+            
+        if not sessionid:
+            #Is client an admin?
+            if not controller.is_admin(clientid):
+                return jsonify({'message': 'You are not authorized to see all sessions.'}), status.HTTP_401_UNAUTHORIZED
         
         try:
             token = controller.authenticate(clientid, apikey)
@@ -200,6 +213,6 @@ def sessions():
         except InvalidGamingSession as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
         except Exception as e:
-            app.logger.error(e, exc_info=False)
+            app.logger.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
     
