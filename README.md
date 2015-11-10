@@ -31,7 +31,7 @@ Request a token:
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix","apikey":"lixapikey", "sessionid":"aaaa"}' http://localhost:5000/gameevents/api/v1.0/token
 
 Commit an event:
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN","timestamp":"0001","gameevent":"<test></test>"}' http://localhost:5000/gameevents/api/v1.0/commitevent
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN","timestamp":"2015-11-10T20:30:00Z","gameevent":"<test></test>"}' http://localhost:5000/gameevents/api/v1.0/commitevent
 
 See events commited in this session:
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN"}' http://localhost:5000/gameevents/api/v1.0/events
