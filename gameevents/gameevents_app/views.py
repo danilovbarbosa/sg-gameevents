@@ -3,27 +3,42 @@ Defines the methods/endpoints (the views) of the gameevents service.
 This defines the interaction points, but the actual logic is treated
 by the :mod:`controller`.
 '''
-from flask import render_template, flash, redirect
-from flask import Flask, jsonify, request, abort
-from flask import current_app, Blueprint, render_template
+
+#Flask and modules
+from flask import Blueprint, jsonify, request, abort
 from flask.ext.api import status 
-from flask.helpers import make_response
-from app import app, auth
-import datetime
-import json
-import time
+#from flask.helpers import make_response
 
-from app.errors import TokenExpired, InvalidGamingSession
-
-
-from app import controller
-from app.models.client import Client
-
+#Exceptions and errors
 from flask.ext.api.exceptions import AuthenticationFailed
+from gameevents_app.errors import TokenExpired, InvalidGamingSession
 
-'''TODO: check if request contains clientid, apikey and **valid** sessionid (will need to call the userprof svc)'''
+#Python modules
+#import datetime
+#import json
+#import time
 
-@app.route('/gameevents/api/v1.0/token', methods = ['POST'])
+#Import controller
+from gameevents_app import controller
+
+#Auth
+from flask.ext.httpauth import HTTPBasicAuth
+
+#Logging
+from logging import getLogger
+LOG = getLogger(__name__)
+
+#Gamevents blueprint
+gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0')
+
+# HTTPAuth
+auth = HTTPBasicAuth()
+    
+#auth blueprint
+#auth_blueprint = Blueprint('auth_blueprint', __name__)
+
+
+@gameevents.route('/token', methods = ['POST'])
 def token():
     """The client can request an authentication token that will be used to 
     interact with the service. The POST request must be sent as JSON and include
@@ -45,17 +60,17 @@ def token():
             if token:
                 return jsonify({ 'token': token.decode('ascii') })
             else:
-                app.logger.debug("Could not authenticate, returning status 401.")
+                LOG.debug("Could not authenticate, returning status 401.")
                 return jsonify({'message': 'Could not authenticate.'}), status.HTTP_401_UNAUTHORIZED
         except AuthenticationFailed as e:
-            app.logger.warning(e.args)
+            LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
         except TokenExpired as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
         except InvalidGamingSession as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
         except Exception as e:
-            app.logger.error(e, exc_info=False)
+            LOG.error(e, exc_info=False)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
@@ -64,25 +79,25 @@ def verify_password(clientid_or_token, apikey=False, sessionid=False):
     try:
         return controller.authenticate(clientid_or_token, apikey, sessionid)
     except Exception as e:
-        app.logger.error(e, exc_info=False)
+        LOG.error(e, exc_info=False)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments  
 
 
-@app.route('/gameevents/api/v1.0/client', methods = ['POST'])
+@gameevents.route('/client', methods = ['POST'])
 def new_client():
     clientid = request.json.get('clientid')
     apikey = request.json.get('apikey')
     try:
         client = controller.newclient(clientid, apikey)
-        return jsonify({'message': 'Client ID created'}), status.HTTP_201_CREATED
+        return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
     except Exception as e:
-        app.logger.error(e, exc_info=False)
+        LOG.error(e, exc_info=False)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
     #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
     
 
 '''
-@app.route('/gameevents/api/v1.0/initsession', methods=['POST'])
+@gameevents.route('/initsession', methods=['POST'])
 def initsession():
     if not request.json or not 'id' in request.json:
         abort(status.HTTP_400_BAD_REQUEST)
@@ -94,7 +109,7 @@ def initsession():
     controller.startgamingsession()
     return jsonify({'token': gamingsession}), status.HTTP_200_OK
 
-@app.route('/gameevents/api/v1.0/endsession', methods=['POST'])
+@gameevents.route('/endsession', methods=['POST'])
 def endsession():
     if not request.json or not 'id' in request.json:
         abort(status.HTTP_400_BAD_REQUEST)
@@ -108,7 +123,7 @@ def endsession():
 '''
 
 
-@app.route('/gameevents/api/v1.0/commitevent', methods=['POST'])
+@gameevents.route('/commitevent', methods=['POST'])
 def commitevent():
     """Receives a json request with a token, timestamp, and game event.
     """
@@ -117,28 +132,25 @@ def commitevent():
     if not request.json or not (set(required_fields).issubset(request.json)):  
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
     else:
-        app.logger.debug("Request is valid. continuing...")
+        LOG.debug("Request is valid. continuing...")
         try:
-            #app.logger.debug("trying to expire the token.")
-            #time.sleep(5) #expire the token
-            app.logger.debug(request.json)
+            LOG.debug(request.json)
             success = controller.recordgameevent(request.json['token'], request.json['timestamp'], request.json['gameevent']) 
             if success:
-                app.logger.info("Successfully recorded a game event.")
+                LOG.info("Successfully recorded a game event.")
                 return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
             else:
-                app.logger.warning("Could not record game event.")
+                LOG.warning("Could not record game event.")
                 abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
-            #    return jsonify({'message': 'Sorry, could not process your request.'}), status.HTTP_500_INTERNAL_SERVER_ERROR
         except AuthenticationFailed as e:
-            app.logger.warning("Authentication failure when trying to record game event.")   
+            LOG.warning("Authentication failure when trying to record game event.")   
             return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED    
         except Exception as e:
-            app.logger.error("Undefined exception when trying to record a game event.")
-            app.logger.error(e, exc_info=False)
+            LOG.error("Undefined exception when trying to record a game event.")
+            LOG.error(e, exc_info=False)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
             
-@app.route('/gameevents/api/v1.0/events', methods=['POST'])
+@gameevents.route('/events', methods=['POST'])
 def get_events():
     """Lists all game events associated to a gaming session. Requires a valid token and a sessionid.
     """
@@ -152,21 +164,21 @@ def get_events():
         try:
             gameevents = controller.getgameevents(token, sessionid)
             num_results = len(gameevents)
-            app.logger.debug("number of results: %s" % num_results)
+            LOG.debug("number of results: %s" % num_results)
             results = [ gameevent.as_dict() for gameevent in gameevents ]
-            app.logger.debug(results)
+            LOG.debug(results)
             return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
             
         except AuthenticationFailed as e:
-            app.logger.warning("Authentication failure when trying to read game events for a token.")
+            LOG.warning("Authentication failure when trying to read game events for a token.")
             return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED  
         
         except Exception as e:
-            app.logger.error("Undefined exception when trying to read game events for a token.")
-            app.logger.error(e, exc_info=True)
+            LOG.error("Undefined exception when trying to read game events for a token.")
+            LOG.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
             
-@app.route('/gameevents/api/v1.0/sessions', methods = ['POST'])
+@gameevents.route('/sessions', methods = ['POST'])
 def sessions():
     """The client can request a list of active sessions. The POST request must be sent as JSON 
     and include a valid "clientid" and "apikey". A "sessionid" is optional.    
@@ -197,22 +209,22 @@ def sessions():
             if token:
                 sessions = controller.getsessions()
                 num_results = len(sessions)
-                app.logger.debug("number of results: %s" % num_results)
+                LOG.debug("number of results: %s" % num_results)
                 results = [ session.as_dict() for session in sessions ]
-                app.logger.debug(results)
+                LOG.debug(results)
                 return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
             
             else:
-                app.logger.debug("Could not authenticate, returning status 401.")
+                LOG.debug("Could not authenticate, returning status 401.")
                 return jsonify({'message': 'Could not authenticate.'}), status.HTTP_401_UNAUTHORIZED
         except AuthenticationFailed as e:
-            app.logger.warning(e.args)
+            LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
         except TokenExpired as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
         except InvalidGamingSession as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
         except Exception as e:
-            app.logger.error(e, exc_info=True)
+            LOG.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
     

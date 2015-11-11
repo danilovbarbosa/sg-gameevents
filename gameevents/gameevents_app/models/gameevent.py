@@ -3,10 +3,17 @@ Models that extend the Model class provided by
 Flask's SQLAlchemy extension (flask.ext.sqlalchemy).
 '''
 
-import uuid
+from uuid import UUID
 import OpenSSL
+# from passlib.apps import custom_app_context as pwd_context
+# from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 
-from app import db
+# from flask import current_app
+from .. import db
+
+#Logging
+# from logging import getLogger
+# LOG = getLogger(__name__)
 
     
 class GameEvent(db.Model):
@@ -22,7 +29,7 @@ class GameEvent(db.Model):
     #----------------------------------------------------------------------
     def __init__(self, gamingsessionid, gameevent):
         """"""
-        self.id = uuid.UUID(bytes = OpenSSL.rand.bytes(16)).hex
+        self.id = UUID(bytes = OpenSSL.rand.bytes(16)).hex
         self.gamingsession_id = gamingsessionid
         self.gameevent = gameevent
         

@@ -7,12 +7,18 @@ Created on 14 Oct 2015
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-DEFAULT_TOKEN_DURATION = 600 #IN SECONDS
-
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'gamingevents.db')
+#Flask stuff
+SQLITE_DB = 'gamingevents.db'
+SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, SQLITE_DB)
 SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
-
-TMPDIR = os.path.join(basedir, 'tmp')
-
 WTF_CSRF_ENABLED = True
 SECRET_KEY = 'heytheredonottrytomesswithmemister'
+
+#Other config
+SQLITE_DB_TEST = 'gamingevents_testing.db'
+SQLALCHEMY_DATABASE_URI_TEST = 'sqlite:///' + os.path.join(basedir, SQLITE_DB_TEST)
+TMPDIR = os.path.join(basedir, 'tmp')
+LOG_FILENAME = "gameevents.log.txt"
+LOG_FILENAME_TEST = "gameevents_testing.log.txt"
+
+DEFAULT_TOKEN_DURATION = 600 #IN SECONDS

@@ -3,18 +3,19 @@ Created on 10 Nov 2015
 
 @author: mbrandaoca
 '''
-import uuid
+from uuid import UUID
 import OpenSSL
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 
-
-from app import db
-from app import app
+from flask import current_app
+from .. import db
 
 from config import DEFAULT_TOKEN_DURATION
 
-
+#Logging
+from logging import getLogger
+LOG = getLogger(__name__)
 
 class Client(db.Model):
     """Model "clients" table in the database. 
@@ -31,7 +32,7 @@ class Client(db.Model):
 
     def __init__(self, clientid, apikey):
         """"""
-        self.id = uuid.UUID(bytes = OpenSSL.rand.bytes(16)).hex
+        self.id = UUID(bytes = OpenSSL.rand.bytes(16)).hex
         self.clientid = clientid
         self.apikey_hash = pwd_context.encrypt(apikey)
         #self.token = None
@@ -44,32 +45,32 @@ class Client(db.Model):
         return obj_d
 
     def verify_apikey(self, apikey):
-        app.logger.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
+        LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
         return pwd_context.verify(apikey, self.apikey_hash)
 
 
     def generate_auth_token(self, expiration = DEFAULT_TOKEN_DURATION):        
-        s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
-        app.logger.debug("Generating token with expiration: %s" % expiration)
+        s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
+        LOG.debug("Generating token with expiration: %s" % expiration)
         return s.dumps({ 'id': self.id, 'clientid' : self.clientid  })
         
     @staticmethod
     def verify_auth_token(token):
-        s = Serializer(app.config['SECRET_KEY'])
+        s = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = s.loads(token)
-            app.logger.debug("Got data: %s " % data)
+            LOG.debug("Got data: %s " % data)
             return dict(clientid=data['clientid'], id=data['id'])
         except SignatureExpired as e:
-            app.logger.debug("Expired token, returning false")
-            app.logger.debug(e, exc_info=False)
+            LOG.debug("Expired token, returning false")
+            LOG.debug(e, exc_info=False)
             #raise e
             return False # valid token, but expired
         except BadSignature as e:
-            app.logger.debug("Invalid token, returning false.")
-            app.logger.debug(e, exc_info=False)
+            LOG.debug("Invalid token, returning false.")
+            LOG.debug(e, exc_info=False)
             #raise e
             return False # invalid token
         except Exception as e:
-            app.logger.error(e, exc_info=False)
+            LOG.error(e, exc_info=False)
             raise e

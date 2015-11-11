@@ -1,58 +1,55 @@
-import os
+
 import unittest
 import time
 import datetime
 import json
-
+#import os
 import sys
 sys.path.append("..") 
 
-from config import basedir, TMPDIR
-from app import app, db
-from app import models#, controller, errors
+from flask import current_app
 
-#from app.errors import InvalidGamingSession
+from gameevents_app import create_app, db
+
+from gameevents_app.models.gamingsession import GamingSession
+from gameevents_app.models.client import Client
+from gameevents_app.models.gameevent import GameEvent
+
+#from gameevents_app.errors import InvalidGamingSession
 #from sqlalchemy.orm.exc import NoResultFound
 #from flask.ext.api.exceptions import AuthenticationFailed
 
-# Logging:
-import logging
-from logging.handlers import RotatingFileHandler
- 
-file_handler_tests = RotatingFileHandler(os.path.join(TMPDIR, 'gameevents-unittests.log.txt'), 'a', 1 * 1024 * 1024, 10)
-file_handler_tests.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-file_handler_tests.setLevel(logging.DEBUG)
-#file_handler_tests.setLevel(logging.INFO)
-app.logger.addHandler(file_handler_tests)
-app.logger.info('Game Events Service Start Up - Debugging')
-
-
+#Logging
+from logging import getLogger
+LOG = getLogger(__name__) 
 
 class TestGameEvents(unittest.TestCase):
     """TODO: Create some tests trying to add duplicate data
     """
     @classmethod
     def setUpClass(self):
-        app.logger.warning("Initializing tests.")
-        app.config['TESTING'] = True
-        app.debug = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'gamingevents_test.db')
+        
+        self.app = create_app(testing=True)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        self.client = self.app.test_client()
+        
+        LOG.warning("Initializing tests.")
         
         # Use Flask's test client for our test.
-        self.app = app.test_client()
+        #self.app = self.app.test_client()
         
         #Create a brand new test db
         db.create_all()
         
         #Add a clientid and apikey
-        new_client = models.Client("myclientid", "myapikey")     
+        new_client = Client("myclientid", "myapikey")     
         
         #Adding one gaming session 
-        new_gamingsession = models.GamingSession("aaaa", "myclientid")
+        new_gamingsession = GamingSession("aaaa")
         
         #Generating tokens        
-        self.mytoken = new_gamingsession.generate_auth_token()
+        self.mytoken = new_gamingsession.generate_auth_token("myclientid")
         self.mybadtoken = "badlogin" + self.mytoken.decode()[8:]
         self.mybadtoken = self.mybadtoken.encode("ascii")
         self.myexpiredtoken = new_gamingsession.generate_auth_token(1)
@@ -60,7 +57,7 @@ class TestGameEvents(unittest.TestCase):
         
         
         
-        new_gamingsession2 = models.GamingSession('bbbb', "myclientid")
+        new_gamingsession2 = GamingSession('bbbb')
         new_gamingsession2.status = False
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
@@ -72,7 +69,7 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        new_gameevent = models.GameEvent(new_gamingsession.id,gameevent)
+        new_gameevent = GameEvent(new_gamingsession.id,gameevent)
         
         db.session.add(new_gamingsession)
         db.session.add(new_gamingsession2)
@@ -81,20 +78,21 @@ class TestGameEvents(unittest.TestCase):
         try:
             db.session.commit()
         except Exception as e:
-            app.logger.error(e, exc_info=True)
+            LOG.error(e, exc_info=True)
 
     
     @classmethod
     def tearDownClass(self):
         db.session.remove()
         db.drop_all()
+        self.app_context.pop()
     
     
     def test_login_existing_sid(self):
         """Make a test request for a login with valid credentials and existing sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid = "aaaa"))
-        response = self.app.post('/gameevents/api/v1.0/token', 
+        response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -106,7 +104,7 @@ class TestGameEvents(unittest.TestCase):
         """Make a test request for a login with valid credentials and a valid - but still not in the db - sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="xxxx"))
-        response = self.app.post('/gameevents/api/v1.0/token', 
+        response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -118,7 +116,7 @@ class TestGameEvents(unittest.TestCase):
         """Make a test request for a login with valid credentials but invalid sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="zzzz"))
-        response = self.app.post('/gameevents/api/v1.0/token', 
+        response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -132,7 +130,7 @@ class TestGameEvents(unittest.TestCase):
         """Make a test request with invalid/missing parameters.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
-        response = self.app.post('/gameevents/api/v1.0/token', 
+        response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -144,7 +142,7 @@ class TestGameEvents(unittest.TestCase):
         """Make a test request for a login with valid client id, invalid apikey and valid sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientidaaaaa", apikey="myapikeyaaaa", sessionid="aaaa"))
-        response = self.app.post('/gameevents/api/v1.0/token', 
+        response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -155,7 +153,7 @@ class TestGameEvents(unittest.TestCase):
         """Make a test request for a login with invalid client id and valid sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikeyaaaa", sessionid="aaaa"))
-        response = self.app.post('/gameevents/api/v1.0/token', 
+        response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -178,8 +176,8 @@ class TestGameEvents(unittest.TestCase):
         timestamp = str(datetime.datetime.now())       
         
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        app.logger.debug(requestdata)
-        response = self.app.post('/gameevents/api/v1.0/commitevent', 
+        LOG.debug(requestdata)
+        response = self.client.post('/gameevents/api/v1.0/commitevent', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -202,8 +200,8 @@ class TestGameEvents(unittest.TestCase):
         timestamp = str(datetime.datetime.now())       
         
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        app.logger.debug(requestdata)
-        response = self.app.post('/gameevents/api/v1.0/commitevent', 
+        LOG.debug(requestdata)
+        response = self.client.post('/gameevents/api/v1.0/commitevent', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -226,8 +224,8 @@ class TestGameEvents(unittest.TestCase):
         timestamp = str(datetime.datetime.now())       
         
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        app.logger.debug(requestdata)
-        response = self.app.post('/gameevents/api/v1.0/commitevent', 
+        LOG.debug(requestdata)
+        response = self.client.post('/gameevents/api/v1.0/commitevent', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -237,23 +235,23 @@ class TestGameEvents(unittest.TestCase):
     def test_getgameevents(self):
         token = self.mytoken.decode()
         requestdata = json.dumps(dict(token=token))
-        app.logger.debug(requestdata)
-        response = self.app.post('/gameevents/api/v1.0/events', 
+        LOG.debug(requestdata)
+        response = self.client.post('/gameevents/api/v1.0/events', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
-        app.logger.warning(response.get_data())
+        LOG.warning(response.get_data())
         self.assertEquals(response.status, "200 OK")
         
     def test_getgameevents_badtoken(self):
         token = self.mybadtoken.decode()
         requestdata = json.dumps(dict(token=token))
-        app.logger.debug(requestdata)
-        response = self.app.post('/gameevents/api/v1.0/events', 
+        LOG.debug(requestdata)
+        response = self.client.post('/gameevents/api/v1.0/events', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
-        app.logger.warning(response.get_data())
+        LOG.warning(response.get_data())
         self.assertEquals(response.status, "401 UNAUTHORIZED")
         
 if __name__ == '__main__':

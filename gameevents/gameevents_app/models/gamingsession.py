@@ -3,14 +3,21 @@ Created on 10 Nov 2015
 
 @author: mbrandaoca
 '''
+from uuid import UUID
+import OpenSSL
 
-import uuid, OpenSSL
+from flask import current_app
+from .. import db
+
+#Logging
+from logging import getLogger
+LOG = getLogger(__name__)
+
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 
-from app import db
-from app import app
-
 from config import DEFAULT_TOKEN_DURATION
+
+
 
 gamingsessions_clients = db.Table('gamingsessions_clients',
     db.Column('gamingsession_id', db.Integer, db.ForeignKey('gamingsession.id')),
@@ -36,7 +43,7 @@ class GamingSession(db.Model):
     
     def __init__(self, sessionid):
         """"""
-        self.id = uuid.UUID(bytes = OpenSSL.rand.bytes(16)).hex
+        self.id = UUID(bytes = OpenSSL.rand.bytes(16)).hex
         #self.status = True
         self.sessionid = sessionid
         
@@ -55,34 +62,34 @@ class GamingSession(db.Model):
             'sessionid': self.sessionid,
             'clients': myclients,
         }
-        #app.logger.debug(obj_d)
+        #gameevents_LOG.debug(obj_d)
         return obj_d
     
     @staticmethod
     def verify_auth_token(token):
-        s = Serializer(app.config['SECRET_KEY'])
+        s = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = s.loads(token)
-            app.logger.debug("Got data: %s " % data)
+            LOG.debug("Got data: %s " % data)
             return dict(sessionid=data['sessionid'], clientid=data['clientid'], id=data['id'])
         except SignatureExpired as e:
-            app.logger.debug("Expired token, returning false")
-            app.logger.debug(e, exc_info=False)
+            LOG.debug("Expired token, returning false")
+            LOG.debug(e, exc_info=False)
             #raise e
             return False # valid token, but expired
         except BadSignature as e:
-            app.logger.debug("Invalid token, returning false.")
-            app.logger.debug(e, exc_info=False)
+            LOG.debug("Invalid token, returning false.")
+            LOG.debug(e, exc_info=False)
             #raise e
             return False # invalid token
         except Exception as e:
-            app.logger.error(e, exc_info=False)
+            LOG.error(e, exc_info=False)
             raise e
         
     
     def generate_auth_token(self, clientid, expiration = DEFAULT_TOKEN_DURATION):        
-        s = Serializer(app.config['SECRET_KEY'], expires_in = expiration)
-        app.logger.debug("Generating token with expiration: %s" % expiration)
+        s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
+        LOG.debug("Generating token with expiration: %s" % expiration)
         return s.dumps({ 'id': self.id, 'sessionid': self.sessionid, 'clientid' : clientid  })
         #return s.dumps({ 'id': self.id, 'sessionid': self.sessionid })
     
