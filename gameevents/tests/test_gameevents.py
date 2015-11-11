@@ -165,7 +165,7 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "401 UNAUTHORIZED")       
         
-    @unittest.skip
+    
     def test_commit_gameevent_validtoken(self):
         token = self.mytoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">

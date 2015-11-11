@@ -48,11 +48,17 @@ class Client(db.Model):
         LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
         return pwd_context.verify(apikey, self.apikey_hash)
 
+    def is_session_authorized(self, sessionid):
+        #Check if this client can read/write this sessionid
+        if (sessionid != "zzzz" and sessionid != False): 
+            return True
+        else:
+            return False
 
-    def generate_auth_token(self, expiration = DEFAULT_TOKEN_DURATION):        
+    def generate_auth_token(self, sessionid = False, expiration = DEFAULT_TOKEN_DURATION):        
         s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
         LOG.debug("Generating token with expiration: %s" % expiration)
-        return s.dumps({ 'id': self.id, 'clientid' : self.clientid  })
+        return s.dumps({ 'id': self.id, 'clientid' : self.clientid , 'sessionid' : sessionid })
         
     @staticmethod
     def verify_auth_token(token):

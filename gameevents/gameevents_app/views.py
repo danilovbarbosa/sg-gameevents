@@ -23,6 +23,7 @@ from gameevents_app import controller
 
 #Extensions
 from .extensions import LOG
+from sqlalchemy.orm.exc import NoResultFound
 
 #Gamevents blueprint
 gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0')
@@ -56,8 +57,12 @@ def token():
         apikey = request.json['apikey']
         
         try:
-            token = controller.authenticate(clientid, apikey, sessionid)
-            return jsonify({ 'token': token.decode('ascii') })
+            client = controller.client_authenticate(clientid, apikey)
+            if client and client.is_session_authorized(sessionid):
+                token = client.generate_auth_token(sessionid)
+                return jsonify({ 'token': token.decode('ascii') })
+            else:
+                return jsonify({'message': 'Authentication failed.'}), status.HTTP_401_UNAUTHORIZED
         except AuthenticationFailed as e:
             LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
@@ -66,7 +71,7 @@ def token():
         except InvalidGamingSessionException as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
         except Exception as e:
-            LOG.error(e, exc_info=False)
+            LOG.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
@@ -74,7 +79,9 @@ def token():
 def verify_password(username, password):
     LOG.debug("In auth.verify_password, checking username: %s and password: %s." % (username,password))
     try:
-        return controller.admin_authenticate(username, password)
+        return controller.client_authenticate(username, password)
+    except AuthenticationFailed as e:
+        return False
     except Exception as e:
         LOG.error(e, exc_info=True)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments  
@@ -193,8 +200,7 @@ def get_events():
 def sessions():
     """The client can request a list of active sessions. The POST request must be sent as JSON 
     and include a valid "clientid" and "apikey". A "sessionid" is optional.    
-    """
-  
+    """  
 
     #Check if request is json and contains all the required fields
     required_fields = ["clientid", "apikey"]
@@ -229,6 +235,9 @@ def sessions():
                 LOG.debug("Could not authenticate, returning status 401.")
                 return jsonify({'message': 'Could not authenticate.'}), status.HTTP_401_UNAUTHORIZED
         except AuthenticationFailed as e:
+            LOG.warning(e.args)
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
+        except NoResultFound as e:
             LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
         except TokenExpired as e:
