@@ -7,7 +7,7 @@ from uuid import UUID
 import OpenSSL
 
 from flask import current_app
-from .. import db
+from ..extensions import db
 
 #Logging
 from logging import getLogger

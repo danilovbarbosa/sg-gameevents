@@ -3,13 +3,19 @@ import unittest
 import time
 import datetime
 import json
-#import os
 import sys
+import base64
 sys.path.append("..") 
 
-from flask import current_app
+#from flask import current_app
 
-from gameevents_app import create_app, db
+from werkzeug.datastructures import Headers
+
+from gameevents_app import create_app
+
+#Extensions
+from gameevents_app.extensions import db, LOG
+
 
 from gameevents_app.models.gamingsession import GamingSession
 from gameevents_app.models.client import Client
@@ -19,9 +25,7 @@ from gameevents_app.models.gameevent import GameEvent
 #from sqlalchemy.orm.exc import NoResultFound
 #from flask.ext.api.exceptions import AuthenticationFailed
 
-#Logging
-from logging import getLogger
-LOG = getLogger(__name__) 
+
 
 class TestGameEvents(unittest.TestCase):
     """TODO: Create some tests trying to add duplicate data
@@ -58,7 +62,7 @@ class TestGameEvents(unittest.TestCase):
         
         
         new_gamingsession2 = GamingSession('bbbb')
-        new_gamingsession2.status = False
+        #new_gamingsession2.status = False
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
                            <ship load="INF_SHIP_STEALTH" hostile="false"/>
@@ -87,8 +91,8 @@ class TestGameEvents(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
     
-    
-    def test_login_existing_sid(self):
+    #@unittest.skip
+    def test_token_existing_sessionid(self):
         """Make a test request for a login with valid credentials and existing sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid = "aaaa"))
@@ -99,8 +103,8 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "200 OK")
     
-    
-    def test_login_nonexisting_but_valid_sid(self):
+
+    def test_token_nonexisting_but_valid_sessionid(self):
         """Make a test request for a login with valid credentials and a valid - but still not in the db - sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="xxxx"))
@@ -111,8 +115,8 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "200 OK")
         
-    
-    def test_login_invalid_sid(self):
+
+    def test_token_invalid_sessionid(self):
         """Make a test request for a login with valid credentials but invalid sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="zzzz"))
@@ -125,8 +129,8 @@ class TestGameEvents(unittest.TestCase):
         
         
     
-    
-    def test_badlogin(self):
+
+    def test_token_badparams(self):
         """Make a test request with invalid/missing parameters.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
@@ -137,9 +141,9 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 400 BAD REQUEST.                                           
         self.assertEquals(response.status, "400 BAD REQUEST")
         
-        
-    def test_invalid_apikey(self):
-        """Make a test request for a login with valid client id, invalid apikey and valid sessionid.
+
+    def test_token_invalid_apikey(self):
+        """Make a test request for a token with valid client id, invalid apikey and valid sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientidaaaaa", apikey="myapikeyaaaa", sessionid="aaaa"))
         response = self.client.post('/gameevents/api/v1.0/token', 
@@ -149,7 +153,8 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "401 UNAUTHORIZED")
  
-    def test_invalid_clientid(self):
+
+    def test_token_invalid_clientid(self):
         """Make a test request for a login with invalid client id and valid sessionid.
         """
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikeyaaaa", sessionid="aaaa"))
@@ -160,7 +165,7 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "401 UNAUTHORIZED")       
         
-    
+    @unittest.skip
     def test_commit_gameevent_validtoken(self):
         token = self.mytoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">
@@ -184,7 +189,7 @@ class TestGameEvents(unittest.TestCase):
 
         self.assertEquals(response.status, "201 CREATED")
     
-    
+    @unittest.skip
     def test_commit_gameevent_expiredtoken(self):
         token = self.myexpiredtoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">
@@ -208,7 +213,7 @@ class TestGameEvents(unittest.TestCase):
 
         self.assertEquals(response.status, "401 UNAUTHORIZED")
     
-    
+    @unittest.skip
     def test_commit_gameevent_badtoken(self):
         token = self.mybadtoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">
@@ -231,7 +236,8 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
 
         self.assertEquals(response.status, "401 UNAUTHORIZED")
-        
+      
+    @unittest.skip  
     def test_getgameevents(self):
         token = self.mytoken.decode()
         requestdata = json.dumps(dict(token=token))
@@ -242,7 +248,8 @@ class TestGameEvents(unittest.TestCase):
                                  follow_redirects=True)
         LOG.warning(response.get_data())
         self.assertEquals(response.status, "200 OK")
-        
+     
+    @unittest.skip   
     def test_getgameevents_badtoken(self):
         token = self.mybadtoken.decode()
         requestdata = json.dumps(dict(token=token))
@@ -252,6 +259,59 @@ class TestGameEvents(unittest.TestCase):
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         LOG.warning(response.get_data())
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+
+    def test_newclient(self):
+        credentials = b"masteroftheuniverse:whatever"
+        encoded_credentials = base64.b64encode(credentials)
+        h = Headers()
+        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+                                 data=requestdata, 
+                                 headers=h, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        self.assertEquals(response.status, "201 CREATED")
+
+        
+    def test_newexistingclient(self):
+        credentials = b"masteroftheuniverse:whatever"
+        encoded_credentials = base64.b64encode(credentials)
+        h = Headers()
+        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/client',
+                                 headers=h, 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        self.assertEquals(response.status, "409 CONFLICT")
+        
+    def test_newclient_nonadmin(self):
+        credentials = b"myclientid:myapikey"
+        encoded_credentials = base64.b64encode(credentials)
+        h = Headers()
+        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+                                 data=requestdata, 
+                                 headers=h, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+                
+    def test_newclient_wrongcredentials(self):
+        credentials = b"myclientid:mywrongapikey"
+        encoded_credentials = base64.b64encode(credentials)
+        h = Headers()
+        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+                                 data=requestdata, 
+                                 headers=h, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
         
 if __name__ == '__main__':

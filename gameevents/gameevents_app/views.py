@@ -10,8 +10,8 @@ from flask.ext.api import status
 #from flask.helpers import make_response
 
 #Exceptions and errors
-from flask.ext.api.exceptions import AuthenticationFailed
-from gameevents_app.errors import TokenExpired, InvalidGamingSession
+from flask.ext.api.exceptions import AuthenticationFailed, ParseError
+from gameevents_app.errors import ClientExistsException, TokenExpiredException, InvalidGamingSessionException
 
 #Python modules
 #import datetime
@@ -21,17 +21,17 @@ from gameevents_app.errors import TokenExpired, InvalidGamingSession
 #Import controller
 from gameevents_app import controller
 
-#Auth
-from flask.ext.httpauth import HTTPBasicAuth
-
-#Logging
-from logging import getLogger
-LOG = getLogger(__name__)
+#Extensions
+from .extensions import LOG
 
 #Gamevents blueprint
 gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0')
 
-# HTTPAuth
+#Admin blueprint
+admin = Blueprint('admin', __name__, url_prefix='/gameevents/api/v1.0/admin')
+
+#Auth
+from flask.ext.httpauth import HTTPBasicAuth
 auth = HTTPBasicAuth()
     
 #auth blueprint
@@ -57,17 +57,13 @@ def token():
         
         try:
             token = controller.authenticate(clientid, apikey, sessionid)
-            if token:
-                return jsonify({ 'token': token.decode('ascii') })
-            else:
-                LOG.debug("Could not authenticate, returning status 401.")
-                return jsonify({'message': 'Could not authenticate.'}), status.HTTP_401_UNAUTHORIZED
+            return jsonify({ 'token': token.decode('ascii') })
         except AuthenticationFailed as e:
             LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
-        except TokenExpired as e:
+        except TokenExpiredException as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
-        except InvalidGamingSession as e:
+        except InvalidGamingSessionException as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
         except Exception as e:
             LOG.error(e, exc_info=False)
@@ -75,21 +71,36 @@ def token():
         
 
 @auth.verify_password
-def verify_password(clientid_or_token, apikey=False, sessionid=False):
+def verify_password(username, password):
+    LOG.debug("In auth.verify_password, checking username: %s and password: %s." % (username,password))
     try:
-        return controller.authenticate(clientid_or_token, apikey, sessionid)
+        return controller.admin_authenticate(username, password)
     except Exception as e:
-        LOG.error(e, exc_info=False)
+        LOG.error(e, exc_info=True)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments  
 
 
-@gameevents.route('/client', methods = ['POST'])
+
+@admin.route('/client', methods = ['POST'])
+@auth.login_required
 def new_client():
+    """An admin can add a new client by posting a request with a valid admin token, 
+    the clientid to be created and the apikey. Requires a valid username and password
+    passed using HTTP authentication.      
+    """
     clientid = request.json.get('clientid')
     apikey = request.json.get('apikey')
     try:
         client = controller.newclient(clientid, apikey)
         return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
+    except ParseError as e:
+        LOG.error(e, exc_info=False)
+        return jsonify({'message': 'Invalid request.'}), status.HTTP_400_BAD_REQUEST
+        #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
+    except ClientExistsException as e:
+        LOG.error(e, exc_info=False)
+        return jsonify({'message': 'Client already exists in the database.'}), status.HTTP_409_CONFLICT
+        #abort(status.HTTP_409_CONFLICT) # missing arguments
     except Exception as e:
         LOG.error(e, exc_info=False)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments

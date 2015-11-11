@@ -9,7 +9,7 @@ import OpenSSL
 # from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 
 # from flask import current_app
-from .. import db
+from ..extensions import db
 
 #Logging
 # from logging import getLogger
