@@ -8,13 +8,14 @@ import OpenSSL
 from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 
-from flask import current_app
+from flask import current_app, g
 from ..extensions import db
 
 from config import DEFAULT_TOKEN_DURATION
 
 #Logging
 from logging import getLogger
+from flask.ext.api.exceptions import AuthenticationFailed
 LOG = getLogger(__name__)
 
 class Client(db.Model):
@@ -46,7 +47,12 @@ class Client(db.Model):
 
     def verify_apikey(self, apikey):
         LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
-        return pwd_context.verify(apikey, self.apikey_hash)
+        verified = pwd_context.verify(apikey, self.apikey_hash)
+        if verified:
+            g.clientid = self.clientid
+            return True
+        else:
+            return False
 
     def is_session_authorized(self, sessionid):
         #Check if this client can read/write this sessionid
@@ -54,11 +60,29 @@ class Client(db.Model):
             return True
         else:
             return False
+        
+    def is_admin(self):
+        if (self.clientid == "dashboard" or self.clientid == "masteroftheuniverse"):
+            return True
+        else: 
+            return False
 
-    def generate_auth_token(self, sessionid = False, expiration = DEFAULT_TOKEN_DURATION):        
-        s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
-        LOG.debug("Generating token with expiration: %s" % expiration)
-        return s.dumps({ 'id': self.id, 'clientid' : self.clientid , 'sessionid' : sessionid })
+    def generate_auth_token(self, sessionid = False, expiration = DEFAULT_TOKEN_DURATION): 
+        if (not sessionid):
+            if self.is_admin():       
+                s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
+                LOG.debug("Generating admin token with expiration: %s" % expiration)
+                return s.dumps({ 'id': self.id, 'clientid' : self.clientid , 'sessionid' : False })
+            else:
+                raise AuthenticationFailed("You are not admin. You need to provide a sessionid")
+        else:
+            if self.is_session_authorized(sessionid):
+                s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
+                LOG.debug("Generating normal token with expiration: %s" % expiration)
+                return s.dumps({ 'id': self.id, 'clientid' : self.clientid , 'sessionid' : sessionid })
+            else:
+                raise AuthenticationFailed("You are not authorized to use this sessionid.")
+
         
     @staticmethod
     def verify_auth_token(token):

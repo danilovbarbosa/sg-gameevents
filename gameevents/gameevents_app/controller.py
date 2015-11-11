@@ -50,13 +50,9 @@ def newclient(clientid, apikey):
 ###################################################
 
 def getsessions():
-    try:
-        query = db.session.query(GamingSession)
-        res_sessions = query.all()
-        return res_sessions
-    except Exception as e:
-        LOG.error(e, exc_info=True)
-        raise e
+    query = db.session.query(GamingSession)
+    res_sessions = query.all()
+    return res_sessions
     
 
 
@@ -113,130 +109,135 @@ def getgameevents(token, sessionid):
         raise e
     
 ###################################################
+#    Clients
+###################################################
+
+def getclient(clientid):
+    try:
+        client = db.session.query(Client).filter_by(clientid = clientid).one()
+        return client
+    except NoResultFound:
+        return False
+    
+    
+###################################################
 #    Token
 ###################################################
 
 def gettoken(clientid, apikey, sessionid=False):
-    try:
-        go_on = False
-        #Check if client is in the database
-        client = db.session.query(Client).filter_by(clientid = clientid).first()
-        if not client:
-            #LOG.debug("Client not in database.")
-            raise Unauthorized("Client not in database.")
+    go_on = False
+    #Check if client is in the database
+    client = db.session.query(Client).filter_by(clientid = clientid).first()
+    if not client:
+        #LOG.debug("Client not in database.")
+        raise Unauthorized("Client not in database.")
+    else:
+        if (not client.verify_apikey(apikey)):
+            #LOG.debug("Wrong credentials.")
+            raise Unauthorized("Wrong credentials.")
         else:
-            if (not client.verify_apikey(apikey)):
-                #LOG.debug("Wrong credentials.")
-                raise Unauthorized("Wrong credentials.")
+            #LOG.debug("Good credentials, continuing...")
+            if (sessionid and is_session_authorized(sessionid, clientid)):
+                #LOG.debug("Client provided valid session id...")
+                go_on = True
             else:
-                #LOG.debug("Good credentials, continuing...")
-                if (sessionid and is_session_authorized(sessionid, clientid)):
-                    #LOG.debug("Client provided valid session id...")
+                #LOG.debug("No session id. Is client an admin?)
+                if (client.is_admin()):
                     go_on = True
                 else:
-                    #LOG.debug("No session id. Is client an admin?)
-                    if (is_admin(clientid)):
-                        go_on = True
-                    else:
-                        raise Unauthorized("Non-admin trying to access admin-only functions.")
-                    
-            if go_on:
-                try:
-                    token = client.generate_auth_token()
-                    return token            
-                except Exception as e:
-                    LOG.error("Unexpected failure when generating token.")
-                    LOG.error(e.args, exc_info=True)
-                    raise e
+                    raise Unauthorized("Non-admin trying to access admin-only functions.")
                 
-    except Exception as e:
-        LOG.error(e, exc_info=True)
-        raise e
+        if go_on:
+            token = client.generate_auth_token()
+            return token            
+            
 
 ###################################################
 #    Authentication functions
 ###################################################
 
-def authenticate(clientid_or_token, apikey=False, sessionid=False):
-    """Takes a client_id + apikey + sessionid and checks if it is a valid combination OR
-    a token. Returns the token.
-    """
-    
-    clientid = False    
-    #First try with the token
-    token = clientid_or_token
-    try:
-        gamingsession = GamingSession.verify_auth_token(token)
-        if gamingsession:
-            LOG.debug("Got a valid token. Now I know sessionid.")
-            sessionid = gamingsession['sessionid']
-            
-        else:
-            LOG.debug("NOT a valid token.")
-            if (apikey):
-                LOG.debug("Apikey provided, trying to authenticate client...")
-                clientid = clientid_or_token
-                #client = models.Client(clientid, apikey)
-                
-                #Check if client is in the database
-                client = db.session.query(Client).filter_by(clientid = clientid).first()
-                if not client:
-                    LOG.debug("Client not in database.")
-                    return False
-                else:
-                    if (not client.verify_apikey(apikey)):
-                        LOG.debug("Wrong credentials.")
-                        return False
-                    else:
-                        LOG.debug("Good credentials, continuing...")
-            else:
-                LOG.debug("Apikey not provided, returning false...")
-                return False
-    except Exception as e:
-        LOG.error("Unexpected failure when trying to authenticate token and/or clientid+apikey+sessionid")
-        LOG.error(e.args, exc_info=True)
-        raise e
-
-    
-    #Is client an admin?
-    is_client_admin = is_admin(clientid) 
-    if (is_client_admin and sessionid == False):
-        try:
-            client = db.session.query(Client).filter_by(clientid = clientid).first()
-            LOG.debug("Client is admin. Generate a token...")
-            token = client.generate_auth_token()
-            return token
-            
-        except Exception as e:
-            LOG.error("Unexpected failure when generating token for admin.")
-            LOG.error(e.args, exc_info=True)
-            raise e
-    elif (is_client_admin==False and sessionid != False):
-        # Now I should have sessionid and clientid. I can see if they are valid
-        LOG.debug("I have sessionid (%s) and clientid (%s). I need to check if this sessionid is valid." % (sessionid, clientid))
-        #gamingsession = GamingSession(sessionid, clientid)
-        gamingsession = GamingSession(sessionid)
-        try:
-            if (check_sessionid(sessionid, clientid)):
-                LOG.debug("Sessionid is valid. Generate a token...")
-                token = gamingsession.generate_auth_token(clientid)
-                return token
-            else:
-                LOG.debug("Session ID not valid. Returning false.")
-                return False
-        except Exception as e:
-            LOG.error("Unexpected failure when checking the sessionid/clientid.")
-            LOG.error(e.args, exc_info=True)
-            raise e
-    else:
-        LOG.debug("Not an admin trying to get token without specific sessionid, returning false")
-        return False
+# def authenticate(clientid_or_token, apikey=False, sessionid=False):
+#     """Takes a client_id + apikey + sessionid and checks if it is a valid combination OR
+#     a token. Returns the token.
+#     """
+#     
+#     clientid = False    
+#     #First try with the token
+#     token = clientid_or_token
+#     try:
+#         gamingsession = GamingSession.verify_auth_token(token)
+#         if gamingsession:
+#             LOG.debug("Got a valid token. Now I know sessionid.")
+#             sessionid = gamingsession['sessionid']
+#             
+#         else:
+#             LOG.debug("NOT a valid token.")
+#             if (apikey):
+#                 LOG.debug("Apikey provided, trying to authenticate client...")
+#                 clientid = clientid_or_token
+#                 #client = models.Client(clientid, apikey)
+#                 
+#                 #Check if client is in the database
+#                 client = db.session.query(Client).filter_by(clientid = clientid).first()
+#                 if not client:
+#                     LOG.debug("Client not in database.")
+#                     return False
+#                 else:
+#                     if (not client.verify_apikey(apikey)):
+#                         LOG.debug("Wrong credentials.")
+#                         return False
+#                     else:
+#                         LOG.debug("Good credentials, continuing...")
+#             else:
+#                 LOG.debug("Apikey not provided, returning false...")
+#                 return False
+#     except Exception as e:
+#         LOG.error("Unexpected failure when trying to authenticate token and/or clientid+apikey+sessionid")
+#         LOG.error(e.args, exc_info=True)
+#         raise e
+# 
+#     
+#     #Is client an admin?
+#     is_client_admin = is_admin(clientid) 
+#     if (is_client_admin and sessionid == False):
+#         try:
+#             client = db.session.query(Client).filter_by(clientid = clientid).first()
+#             LOG.debug("Client is admin. Generate a token...")
+#             token = client.generate_auth_token()
+#             return token
+#             
+#         except Exception as e:
+#             LOG.error("Unexpected failure when generating token for admin.")
+#             LOG.error(e.args, exc_info=True)
+#             raise e
+#     elif (is_client_admin==False and sessionid != False):
+#         # Now I should have sessionid and clientid. I can see if they are valid
+#         LOG.debug("I have sessionid (%s) and clientid (%s). I need to check if this sessionid is valid." % (sessionid, clientid))
+#         #gamingsession = GamingSession(sessionid, clientid)
+#         gamingsession = GamingSession(sessionid)
+#         try:
+#             if (check_sessionid(sessionid, clientid)):
+#                 LOG.debug("Sessionid is valid. Generate a token...")
+#                 token = gamingsession.generate_auth_token(clientid)
+#                 return token
+#             else:
+#                 LOG.debug("Session ID not valid. Returning false.")
+#                 return False
+#         except Exception as e:
+#             #LOG.error("Unexpected failure when checking the sessionid/clientid.")
+#             #LOG.error(e.args, exc_info=True)
+#             raise e
+#     else:
+#         LOG.debug("Not an admin trying to get token without specific sessionid, returning false")
+#         return False
     
 
 def client_authenticate(clientid, apikey):
     try:
         client = db.session.query(Client).filter_by(clientid = clientid).one()
+        LOG.debug("Found a client.")
         if (not client.verify_apikey(apikey)):
+            LOG.debug("Oops, wrong password %s" % apikey)
             raise AuthenticationFailed("Wrong credentials.")
         else:
             return client
@@ -244,20 +245,20 @@ def client_authenticate(clientid, apikey):
         raise AuthenticationFailed("Clientid does not exist.")
         
     
-def is_admin(client):
-    #LOG.debug("Is it an admin? %s" % client)
-    if type(client) is Client:
-        clientid = client.clientid
-    elif type(client) is str:
-        clientid = client
-    else:
-        LOG.error("Tried to verify if an invalid object or string is admin.")
-        raise ParseError
-    
-    if (clientid == "dashboard" or clientid == "masteroftheuniverse"):
-        return True
-    else: 
-        return False
+# def is_admin(client):
+#     #LOG.debug("Is it an admin? %s" % client)
+#     if type(client) is Client:
+#         clientid = client.clientid
+#     elif type(client) is str:
+#         clientid = client
+#     else:
+#         LOG.error("Tried to verify if an invalid object or string is admin.")
+#         raise ParseError
+#     
+#     if (clientid == "dashboard" or clientid == "masteroftheuniverse"):
+#         return True
+#     else: 
+#         return False
     
 def is_client_authorized(token, sessionid):
     #TODO: Implement this function!!! 

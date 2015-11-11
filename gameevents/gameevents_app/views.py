@@ -5,7 +5,7 @@ by the :mod:`controller`.
 '''
 
 #Flask and modules
-from flask import Blueprint, jsonify, request, abort
+from flask import Blueprint, jsonify, request, abort, g
 from flask.ext.api import status 
 #from flask.helpers import make_response
 
@@ -48,31 +48,33 @@ def token():
     """
 
     #Check if request is json and contains all the required fields
-    required_fields = ["clientid", "apikey", "sessionid"]
+    required_fields = ["clientid", "apikey"]
     if not request.json or not (set(required_fields).issubset(request.json)): 
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST      
     else:
         clientid = request.json['clientid']
-        sessionid = request.json['sessionid']
         apikey = request.json['apikey']
         
         try:
+            sessionid = request.json['sessionid']
+        except KeyError:
+            sessionid = False
+        
+        try:
             client = controller.client_authenticate(clientid, apikey)
-            if client and client.is_session_authorized(sessionid):
-                token = client.generate_auth_token(sessionid)
-                return jsonify({ 'token': token.decode('ascii') })
-            else:
-                return jsonify({'message': 'Authentication failed.'}), status.HTTP_401_UNAUTHORIZED
+            token = client.generate_auth_token(sessionid)
+            return jsonify({ 'token': token.decode('ascii') })
         except AuthenticationFailed as e:
             LOG.warning(e.args)
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
+            return jsonify({'message': 'Could not authenticate. Please check your credentials and try again.'}), status.HTTP_401_UNAUTHORIZED 
         except TokenExpiredException as e:
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
+            return jsonify({'message': 'Your token expired. Please generate another one.'}), status.HTTP_401_UNAUTHORIZED
         except InvalidGamingSessionException as e:
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
+            return jsonify({'message': 'Invalid gaming session. Did the player authorize the use of their data?'}), status.HTTP_401_UNAUTHORIZED
         except Exception as e:
             LOG.error(e, exc_info=True)
-            abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return jsonify({'message': 'Unexpected error'}), status.HTTP_500_INTERNAL_SERVER_ERROR
+
         
 
 @auth.verify_password
@@ -95,51 +97,37 @@ def new_client():
     the clientid to be created and the apikey. Requires a valid username and password
     passed using HTTP authentication.      
     """
-    clientid = request.json.get('clientid')
-    apikey = request.json.get('apikey')
+    newclientid = request.json.get('clientid')
+    newapikey = request.json.get('apikey')
+    
     try:
-        client = controller.newclient(clientid, apikey)
-        return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
+        current_client = controller.getclient(g.clientid)
+        if (current_client.is_admin()):
+            client = controller.newclient(newclientid, newapikey)
+            return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
+        else:
+            return jsonify({'message': 'Sorry, you are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
     except ParseError as e:
         LOG.error(e, exc_info=False)
         return jsonify({'message': 'Invalid request.'}), status.HTTP_400_BAD_REQUEST
+        #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
+    except NoResultFound as e:
+        LOG.error(e, exc_info=False)
+        return jsonify({'message': 'Non authenticated.'}), status.HTTP_401_UNAUTHORIZED
+    except AuthenticationFailed as e:
+        LOG.error(e, exc_info=False)
+        return jsonify({'message': 'You are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
         #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
     except ClientExistsException as e:
         LOG.error(e, exc_info=False)
         return jsonify({'message': 'Client already exists in the database.'}), status.HTTP_409_CONFLICT
         #abort(status.HTTP_409_CONFLICT) # missing arguments
     except Exception as e:
-        LOG.error(e, exc_info=False)
+        LOG.error(e, exc_info=True)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
-    #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
+        #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
+
     
-
-'''
-@gameevents.route('/initsession', methods=['POST'])
-def initsession():
-    if not request.json or not 'id' in request.json:
-        abort(status.HTTP_400_BAD_REQUEST)
-    gamingsession = {
-        'id': request.json['id'],
-        'timestamp': str(datetime.datetime.now()),
-        'status':'active'
-    }
-    controller.startgamingsession()
-    return jsonify({'token': gamingsession}), status.HTTP_200_OK
-
-@gameevents.route('/endsession', methods=['POST'])
-def endsession():
-    if not request.json or not 'id' in request.json:
-        abort(status.HTTP_400_BAD_REQUEST)
-    if controller.finishgamingsession(request.json['id']):
-        return jsonify({'message': 'Session terminated'}), status.HTTP_200_OK
-    else:
-        resp = make_response(json.dumps({'error': 'No such session.'}), status.HTTP_405_METHOD_NOT_ALLOWED)
-        h = resp.headers
-        h['Access-Control-Allow-Methods'] = 'initsession'        
-        return resp
-'''
-
 
 @gameevents.route('/commitevent', methods=['POST'])
 def commitevent():

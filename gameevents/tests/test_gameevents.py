@@ -47,7 +47,8 @@ class TestGameEvents(unittest.TestCase):
         db.create_all()
         
         #Add a clientid and apikey
-        new_client = Client("myclientid", "myapikey")     
+        new_client = Client("myclientid", "myapikey")
+        new_client2 = Client("dashboard", "dashboardapikey")        
         
         #Adding one gaming session 
         new_gamingsession = GamingSession("aaaa")
@@ -79,6 +80,7 @@ class TestGameEvents(unittest.TestCase):
         db.session.add(new_gamingsession2)
         db.session.add(new_gameevent)
         db.session.add(new_client)
+        db.session.add(new_client2)
         try:
             db.session.commit()
         except Exception as e:
@@ -127,13 +129,22 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "401 UNAUTHORIZED")
         
-        
+    def test_get_admin_token(self):
+        """Make a test request for a login with valid credentials and existing sessionid.
+        """
+        requestdata = json.dumps(dict(clientid="dashboard", apikey="dashboardapikey"))
+        response = self.client.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "200 OK")
     
 
     def test_token_badparams(self):
         """Make a test request with invalid/missing parameters.
         """
-        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
+        requestdata = json.dumps(dict(clientid="myclientid"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -262,7 +273,7 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "401 UNAUTHORIZED")
 
     def test_newclient(self):
-        credentials = b"masteroftheuniverse:whatever"
+        credentials = b"dashboard:dashboardapikey"
         encoded_credentials = base64.b64encode(credentials)
         h = Headers()
         h.add('Authorization', 'Basic ' + encoded_credentials.decode())
@@ -276,7 +287,7 @@ class TestGameEvents(unittest.TestCase):
 
         
     def test_newexistingclient(self):
-        credentials = b"masteroftheuniverse:whatever"
+        credentials = b"dashboard:dashboardapikey"
         encoded_credentials = base64.b64encode(credentials)
         h = Headers()
         h.add('Authorization', 'Basic ' + encoded_credentials.decode())
