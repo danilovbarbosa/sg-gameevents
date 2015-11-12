@@ -92,15 +92,16 @@ class Client(db.Model):
             LOG.debug("Got data: %s " % data)
             return dict(clientid=data['clientid'], id=data['id'])
         except SignatureExpired as e:
-            LOG.debug("Expired token, returning false")
-            LOG.debug(e, exc_info=False)
-            #raise e
-            return False # valid token, but expired
+            #LOG.debug("Expired token, returning false")
+            #LOG.debug(e, exc_info=False)
+            raise AuthenticationFailed("Expired token.")
+            #return False # valid token, but expired
         except BadSignature as e:
-            LOG.debug("Invalid token, returning false.")
-            LOG.debug(e, exc_info=False)
+            #LOG.debug("Invalid token, returning false.")
+            #LOG.debug(e, exc_info=False)
+            raise AuthenticationFailed("Bad token.")
             #raise e
-            return False # invalid token
+            #return False # invalid token
         except Exception as e:
             LOG.error(e, exc_info=False)
             raise e

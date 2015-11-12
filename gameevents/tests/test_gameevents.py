@@ -48,16 +48,21 @@ class TestGameEvents(unittest.TestCase):
         
         #Add a clientid and apikey
         new_client = Client("myclientid", "myapikey")
-        new_client2 = Client("dashboard", "dashboardapikey")        
+        new_admin_client = Client("dashboard", "dashboardapikey")        
         
         #Adding one gaming session 
         new_gamingsession = GamingSession("aaaa")
         
         #Generating tokens        
-        self.mytoken = new_gamingsession.generate_auth_token("myclientid")
+        self.mytoken = new_client.generate_auth_token("aaaa")
+        self.myexpiredtoken = new_client.generate_auth_token("aaaa", expiration=1)
+        
+        self.myadmintoken = new_admin_client.generate_auth_token()
+        self.myexpiredadmintoken = new_admin_client.generate_auth_token(expiration=1)
+        
         self.mybadtoken = "badlogin" + self.mytoken.decode()[8:]
         self.mybadtoken = self.mybadtoken.encode("ascii")
-        self.myexpiredtoken = new_gamingsession.generate_auth_token(1)
+        
         time.sleep(3) #expire the token
         
         
@@ -80,7 +85,7 @@ class TestGameEvents(unittest.TestCase):
         db.session.add(new_gamingsession2)
         db.session.add(new_gameevent)
         db.session.add(new_client)
-        db.session.add(new_client2)
+        db.session.add(new_admin_client)
         try:
             db.session.commit()
         except Exception as e:
@@ -272,55 +277,48 @@ class TestGameEvents(unittest.TestCase):
         LOG.warning(response.get_data())
         self.assertEquals(response.status, "401 UNAUTHORIZED")
 
-    def test_newclient(self):
-        credentials = b"dashboard:dashboardapikey"
-        encoded_credentials = base64.b64encode(credentials)
-        h = Headers()
-        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
-        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+    def test_newclient_admintoken(self):
+        token = self.myadmintoken.decode()
+        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
         response = self.client.post('/gameevents/api/v1.0/admin/client', 
                                  data=requestdata, 
-                                 headers=h, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "201 CREATED")
 
         
     def test_newexistingclient(self):
-        credentials = b"dashboard:dashboardapikey"
-        encoded_credentials = base64.b64encode(credentials)
-        h = Headers()
-        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
-        requestdata = json.dumps(dict(clientid="myclientid", apikey="testapikey"))
+        token = self.myadmintoken.decode()
+        requestdata = json.dumps(dict(token=token, clientid="myclientid", apikey="testapikey"))
         response = self.client.post('/gameevents/api/v1.0/admin/client',
-                                 headers=h, 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "409 CONFLICT")
         
-    def test_newclient_nonadmin(self):
-        credentials = b"myclientid:myapikey"
-        encoded_credentials = base64.b64encode(credentials)
-        h = Headers()
-        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
-        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+    def test_newclient_nonadmintoken(self):
+        token = self.mytoken.decode()
+        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
         response = self.client.post('/gameevents/api/v1.0/admin/client', 
                                  data=requestdata, 
-                                 headers=h, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+        
+    def test_newclient_expiredadmintoken(self):
+        token = self.myexpiredadmintoken.decode()
+        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+                                 data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
                 
-    def test_newclient_wrongcredentials(self):
-        credentials = b"myclientid:mywrongapikey"
-        encoded_credentials = base64.b64encode(credentials)
-        h = Headers()
-        h.add('Authorization', 'Basic ' + encoded_credentials.decode())
-        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+    def test_newclient_badtoken(self):
+        token = self.mybadtoken.decode()
+        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
         response = self.client.post('/gameevents/api/v1.0/admin/client', 
                                  data=requestdata, 
-                                 headers=h, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")

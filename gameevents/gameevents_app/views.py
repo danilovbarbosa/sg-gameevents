@@ -31,12 +31,6 @@ gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0'
 #Admin blueprint
 admin = Blueprint('admin', __name__, url_prefix='/gameevents/api/v1.0/admin')
 
-#Auth
-from flask.ext.httpauth import HTTPBasicAuth
-auth = HTTPBasicAuth()
-    
-#auth blueprint
-#auth_blueprint = Blueprint('auth_blueprint', __name__)
 
 
 @gameevents.route('/token', methods = ['POST'])
@@ -77,32 +71,21 @@ def token():
 
         
 
-@auth.verify_password
-def verify_password(username, password):
-    LOG.debug("In auth.verify_password, checking username: %s and password: %s." % (username,password))
-    try:
-        return controller.client_authenticate(username, password)
-    except AuthenticationFailed as e:
-        return False
-    except Exception as e:
-        LOG.error(e, exc_info=True)
-        abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments  
-
-
 
 @admin.route('/client', methods = ['POST'])
-@auth.login_required
 def new_client():
     """An admin can add a new client by posting a request with a valid admin token, 
-    the clientid to be created and the apikey. Requires a valid username and password
-    passed using HTTP authentication.      
+    the clientid to be created and the apikey. 
     """
+    token = request.json.get('token')
     newclientid = request.json.get('clientid')
     newapikey = request.json.get('apikey')
     
     try:
-        current_client = controller.getclient(g.clientid)
-        if (current_client.is_admin()):
+        current_client = controller.token_authenticate(token)
+        is_current_client_admin = current_client.is_admin()
+        if (current_client and is_current_client_admin):
+            LOG.debug("Current client %s is admin? %s" % (current_client.clientid, is_current_client_admin))
             client = controller.newclient(newclientid, newapikey)
             return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
         else:
@@ -116,7 +99,7 @@ def new_client():
         return jsonify({'message': 'Non authenticated.'}), status.HTTP_401_UNAUTHORIZED
     except AuthenticationFailed as e:
         LOG.error(e, exc_info=False)
-        return jsonify({'message': 'You are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
+        return jsonify({'message': 'You are not allowed to do this action. Do you have a valid token?'}), status.HTTP_401_UNAUTHORIZED
         #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
     except ClientExistsException as e:
         LOG.error(e, exc_info=False)

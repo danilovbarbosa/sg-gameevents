@@ -25,8 +25,6 @@ def create_app(testing=False):
     #from .views import auth_blueprint
     app.register_blueprint(gameevents)
     app.register_blueprint(admin)
-    #app.register_blueprint(auth_blueprint)  
-
 
     # Configure app
     app.config.from_object('config')

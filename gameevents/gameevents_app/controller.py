@@ -243,22 +243,19 @@ def client_authenticate(clientid, apikey):
             return client
     except NoResultFound:
         raise AuthenticationFailed("Clientid does not exist.")
-        
+
+def token_authenticate(token):
+    try:
+        token_client = Client.verify_auth_token(token)
+        clientid_from_token = token_client["clientid"]
+        client = db.session.query(Client).filter_by(clientid = clientid_from_token).one()
+        return client
+    except NoResultFound:
+        raise AuthenticationFailed("Clientid does not exist.")
+#     except AuthenticationFailed as e: 
+#         raise e
+            #let AuthenticationFailed raise on its own   
     
-# def is_admin(client):
-#     #LOG.debug("Is it an admin? %s" % client)
-#     if type(client) is Client:
-#         clientid = client.clientid
-#     elif type(client) is str:
-#         clientid = client
-#     else:
-#         LOG.error("Tried to verify if an invalid object or string is admin.")
-#         raise ParseError
-#     
-#     if (clientid == "dashboard" or clientid == "masteroftheuniverse"):
-#         return True
-#     else: 
-#         return False
     
 def is_client_authorized(token, sessionid):
     #TODO: Implement this function!!! 
