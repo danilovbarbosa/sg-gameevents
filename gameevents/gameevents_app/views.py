@@ -5,7 +5,7 @@ by the :mod:`controller`.
 '''
 
 #Flask and modules
-from flask import Blueprint, jsonify, request, abort, g
+from flask import Blueprint, jsonify, request, abort
 from flask.ext.api import status 
 #from flask.helpers import make_response
 
@@ -62,7 +62,6 @@ def get_token():
             token = client.generate_auth_token(sessionid)
             return jsonify({ 'token': token.decode('ascii') })
         except AuthenticationFailed as e:
-            LOG.warning(e.args)
             return jsonify({'message': 'Could not authenticate. Please check your credentials and try again.'}), status.HTTP_401_UNAUTHORIZED 
         except TokenExpiredException as e:
             return jsonify({'message': 'Your token expired. Please generate another one.'}), status.HTTP_401_UNAUTHORIZED
@@ -90,24 +89,23 @@ def new_client():
         current_client = controller.token_authenticate(token)
         is_current_client_admin = current_client.is_admin()
         if (current_client and is_current_client_admin):
-            LOG.debug("Current client %s is admin? %s" % (current_client.clientid, is_current_client_admin))
-            client = controller.newclient(newclientid, newapikey)
+            client = controller.new_client(newclientid, newapikey)
             return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
         else:
             return jsonify({'message': 'Sorry, you are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
     except ParseError as e:
-        LOG.error(e, exc_info=False)
+        #LOG.error(e, exc_info=False)
         return jsonify({'message': 'Invalid request.'}), status.HTTP_400_BAD_REQUEST
         #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
     except NoResultFound as e:
-        LOG.error(e, exc_info=False)
+        #LOG.error(e, exc_info=False)
         return jsonify({'message': 'Non authenticated.'}), status.HTTP_401_UNAUTHORIZED
     except AuthenticationFailed as e:
-        LOG.error(e, exc_info=False)
+        #LOG.error(e, exc_info=False)
         return jsonify({'message': 'You are not allowed to do this action. Do you have a valid token?'}), status.HTTP_401_UNAUTHORIZED
         #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
     except ClientExistsException as e:
-        LOG.error(e, exc_info=False)
+        #LOG.error(e, exc_info=False)
         return jsonify({'message': 'Client already exists in the database.'}), status.HTTP_409_CONFLICT
         #abort(status.HTTP_409_CONFLICT) # missing arguments
     except Exception as e:
@@ -136,20 +134,16 @@ def get_sessions():
             if (not client or not client.is_admin()):
                 return jsonify({'message': 'You are not authorized to see all sessions.'}), status.HTTP_401_UNAUTHORIZED
             else:
-                sessions = controller.getsessions()
+                sessions = controller.get_sessions()
                 num_results = len(sessions)
-                LOG.debug("number of results: %s" % num_results)
                 results = [ session.as_dict() for session in sessions ]
-                LOG.debug(results)
                 return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
             
         except KeyError:
             return jsonify({'message': 'Bad request. You need to provide a valid token.'}), status.HTTP_400_BAD_REQUEST
         except AuthenticationFailed as e:
-            LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
         except NoResultFound as e:
-            LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
         except TokenExpiredException as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
@@ -172,18 +166,14 @@ def commit_event():
     if not request.json or not (set(required_fields).issubset(request.json)):  
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
     else:
-        LOG.debug("Request is valid. continuing...")
         try:
-            LOG.debug(request.json)
-            success = controller.recordgameevent(request.json['token'], request.json['timestamp'], request.json['gameevent']) 
+            success = controller.record_gameevent(request.json['token'], request.json['timestamp'], request.json['gameevent']) 
             if success:
-                LOG.info("Successfully recorded a game event.")
                 return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
             else:
-                LOG.warning("Could not record game event.")
-                abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return jsonify({'message': "Could not record game event."}), status.HTTP_500_INTERNAL_SERVER_ERROR
         except AuthenticationFailed as e:
-            LOG.warning("Authentication failure when trying to record game event.")   
+            #LOG.warning("Authentication failure when trying to record game event.")   
             return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED    
         except Exception as e:
             LOG.error("Undefined exception when trying to record a game event.")
@@ -204,11 +194,11 @@ def get_events():
         try:
             client = controller.token_authenticate(token)
             if client.is_session_authorized(sessionid):
-                gameevents = controller.getgameevents(token, sessionid)
+                gameevents = controller.get_gameevents(token, sessionid)
                 num_results = len(gameevents)
-                LOG.debug("number of results: %s" % num_results)
+                #LOG.debug("number of results: %s" % num_results)
                 results = [ gameevent.as_dict() for gameevent in gameevents ]
-                LOG.debug(results)
+                #LOG.debug(results)
                 return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
             else:
                 return jsonify({'message': "Not authorized to see events for this session."}), status.HTTP_401_UNAUTHORIZED

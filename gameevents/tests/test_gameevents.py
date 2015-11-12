@@ -4,13 +4,13 @@ import time
 import datetime
 import json
 import sys
-import base64
-from werkzeug.wrappers import Response
+#import base64
+#from werkzeug.wrappers import Response
 sys.path.append("..") 
 
 #from flask import current_app
 
-from werkzeug.datastructures import Headers
+#from werkzeug.datastructures import Headers
 
 from gameevents_app import create_app
 
@@ -39,10 +39,7 @@ class TestGameEvents(unittest.TestCase):
         self.app_context.push()
         self.client = self.app.test_client()
         
-        LOG.warning("Initializing tests.")
-        
-        # Use Flask's test client for our test.
-        #self.app = self.app.test_client()
+        LOG.info("Initializing tests.")
         
         #Create a brand new test db
         db.create_all()
@@ -95,6 +92,7 @@ class TestGameEvents(unittest.TestCase):
     
     @classmethod
     def tearDownClass(self):
+        LOG.info("======================Finished tests====================")
         db.session.remove()
         db.drop_all()
         self.app_context.pop()
@@ -217,10 +215,8 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        timestamp = str(datetime.datetime.now())       
-        
+        timestamp = str(datetime.datetime.now())
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        LOG.debug(requestdata)
         response = self.client.post('/gameevents/api/v1.0/commitevent', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -324,7 +320,6 @@ class TestGameEvents(unittest.TestCase):
         token = self.myadmintoken.decode()   
         
         requestdata = json.dumps(dict(token=token))
-        LOG.debug(requestdata)
         response = self.client.post('/gameevents/api/v1.0/sessions', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
