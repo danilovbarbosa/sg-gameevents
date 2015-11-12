@@ -193,7 +193,7 @@ def commit_event():
             return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED    
         except Exception as e:
             LOG.error("Undefined exception when trying to record a game event.")
-            LOG.error(e, exc_info=False)
+            LOG.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
             
 @gameevents.route('/events', methods=['POST'])

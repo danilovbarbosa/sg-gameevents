@@ -8,7 +8,7 @@ of the application when called by the views.
 # Exceptions and errors
 from flask.ext.api.exceptions import AuthenticationFailed, ParseError
 from sqlalchemy.orm.exc import NoResultFound 
-from gameevents_app.errors import ClientExistsException
+from gameevents_app.errors import *
 #from itsdangerous import BadSignature, SignatureExpired
 #from werkzeug.exceptions import Unauthorized
 #from flask_api.exceptions import NotFound
@@ -56,7 +56,24 @@ def get_sessions():
     res_sessions = query.all()
     return res_sessions
     
-
+def new_session(sessionid):
+    """TODO: associate the session to a client """
+    session = GamingSession(sessionid)
+    try:
+        db.session.add(session)
+        db.session.commit()
+        return session
+    except Exception as e:
+        LOG.warning(e)
+        db.session.rollback()
+        db.session.flush() # for resetting non-commited .add()
+        LOG.error(e, exc_info=True)
+        raise e  
+    
+def is_session_authorized(sessionid):
+    """TODO: Implement this function to check with user profile if the pair is valid."""
+    return True
+    
 
 ###################################################
 #    Game events functions
@@ -69,7 +86,18 @@ def record_gameevent(token, timestamp, gameevent):
     if client and ("sessionid" in client):
         sessionid = client["sessionid"]
         query_sessionid = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid)
-        res_sessionid = query_sessionid.one()
+        try:
+            res_sessionid = query_sessionid.one()
+        except NoResultFound:
+            # SessionID is not in the db. Ask the userprofile service and if authorized, 
+            # add it here.
+            if (is_session_authorized(sessionid)):
+                res_session = new_session(sessionid)
+                res_sessionid = res_session.sessionid
+            else:
+                raise SessionNotAuthorizedException("You are not authorized to use this sessionid.")
+            
+            
         if (res_sessionid):
             new_gameevent = GameEvent(sessionid, gameevent)
             db.session.add(new_gameevent)

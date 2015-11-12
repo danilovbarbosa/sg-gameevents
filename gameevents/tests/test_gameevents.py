@@ -55,6 +55,8 @@ class TestGameEvents(unittest.TestCase):
         self.mytoken = new_client.generate_auth_token("aaaa")
         self.myexpiredtoken = new_client.generate_auth_token("aaaa", expiration=1)
         
+        self.mytokennewsession = new_client.generate_auth_token("aaaanewsession")
+        
         self.myadmintoken = new_admin_client.generate_auth_token()
         self.myexpiredadmintoken = new_admin_client.generate_auth_token(expiration=1)
         
@@ -203,7 +205,21 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        timestamp = str(datetime.datetime.now())       
+        timestamp = str(datetime.datetime.now())      
+        
+    def test_commit_gameevent_validtoken_newsessionid(self):
+        token = self.mytokennewsession.decode()
+        gameevent = '''<event name="INF_STEALTH_FOUND">
+                           <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
+                           <ship load="INF_SHIP_STEALTH" hostile="false"/>
+                           <choice>
+                              <text>Attack the Stealth ship.</text>
+                                <event>
+                                    <ship load="INF_SHIP_STEALTH" hostile="true"/>
+                                </event>
+                           </choice>
+                        </event>'''
+        timestamp = str(datetime.datetime.now())     
         
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
         response = self.client.post('/gameevents/api/v1.0/commitevent', 
@@ -345,7 +361,7 @@ class TestGameEvents(unittest.TestCase):
        
         json_results = json.loads(response.get_data().decode())
         self.assertEquals(response.status, "200 OK")
-        self.assertEquals(json_results["count"], 2)
+        self.assertEquals(json_results["count"], 3)
         
 if __name__ == '__main__':
     unittest.main()

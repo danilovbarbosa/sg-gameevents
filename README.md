@@ -21,12 +21,17 @@ Run the server
 
 $ python gameevents/run.py
 
-Add clients to the database (replace USERNAME:PASSWORD) for a valid admin combination:
+Request an admin token:
 
-$ curl -u USERNAME:PASSWORD -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix", "apikey":"lixapikey"}' http://localhost:5000/gameevents/api/v1.0/admin/client
-$ curl -u USERNAME:PASSWORD -i -H "Content-Type: application/json" -X POST -d '{"clientid":"dashboard", "apikey":"dashboardapikey"}' http://localhost:5000/gameevents/api/v1.0//admin/client
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"masteroftheuniverse","apikey":"nevermind"}' http://localhost:5000/gameevents/api/v1.0/token
 
-Request a token:
+Add clients to the database using the admin token:
+
+
+$ curl  -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix", "apikey":"lixapikey", "token":"YOURADMINTOKEN"}' http://localhost:5000/gameevents/api/v1.0/admin/client
+
+
+Request a token (normal user):
 
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix","apikey":"lixapikey", "sessionid":"aaaa"}' http://localhost:5000/gameevents/api/v1.0/token
 

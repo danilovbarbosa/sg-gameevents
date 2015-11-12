@@ -8,6 +8,12 @@ class InvalidGamingSessionException(Exception):
     def __str__(self):
         return repr(self.value)
     
+class SessionNotAuthorizedException(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
+    
 class TokenExpiredException(Exception):
     def __init__(self, value):
         self.value = value
