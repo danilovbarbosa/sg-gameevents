@@ -11,7 +11,7 @@ from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSign
 from flask.ext.api.exceptions import AuthenticationFailed
 
 from flask import current_app
-from ..extensions import db
+from ..extensions import db, LOG
 
 from config import DEFAULT_TOKEN_DURATION
 

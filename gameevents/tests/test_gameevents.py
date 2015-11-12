@@ -144,6 +144,16 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "200 OK")
     
+    def test_get_admin_token_master(self):
+        """Make a test request for a login with superuser (temporary!!!).
+        """
+        requestdata = json.dumps(dict(clientid="masteroftheuniverse", apikey="whatever"))
+        response = self.client.post('/gameevents/api/v1.0/token', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        # Assert response is 200 OK.                                           
+        self.assertEquals(response.status, "200 OK")
 
     def test_token_badparams(self):
         """Make a test request with invalid/missing parameters.
@@ -277,7 +287,15 @@ class TestGameEvents(unittest.TestCase):
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "201 CREATED")
-
+        
+    def test_newclient_bad_request_missing_params(self):
+        requestdata = json.dumps(dict(clientid="lix", apikey="lixapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        self.assertEquals(response.status, "400 BAD REQUEST")
+        
         
     def test_newexistingclient(self):
         token = self.myadmintoken.decode()

