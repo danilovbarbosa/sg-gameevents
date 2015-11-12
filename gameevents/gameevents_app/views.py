@@ -32,9 +32,12 @@ gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0'
 admin = Blueprint('admin', __name__, url_prefix='/gameevents/api/v1.0/admin')
 
 
+######################################################
+# Authentication
+######################################################
 
 @gameevents.route('/token', methods = ['POST'])
-def token():
+def get_token():
     """The client can request an authentication token that will be used to 
     interact with the service. The POST request must be sent as JSON and include
     a valid "clientid" and "apikey" (unique for each game) and a valid "sessionid".
@@ -70,7 +73,9 @@ def token():
             return jsonify({'message': 'Unexpected error'}), status.HTTP_500_INTERNAL_SERVER_ERROR
 
         
-
+######################################################
+# Admin
+######################################################
 
 @admin.route('/client', methods = ['POST'])
 def new_client():
@@ -110,10 +115,56 @@ def new_client():
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
         #return jsonify({ 'clientid': client.clientid }), 201, {'Location': url_for('token', clientid = client.clientid, apikey = client.apikey, _external = True)}
 
-    
+
+
+@gameevents.route('/sessions', methods = ['POST'])
+def get_sessions():
+    """The client can request a list of active sessions. The POST request must be sent as JSON 
+    and include a valid "token".    
+    """  
+
+    #Check if request is json and contains all the required fields
+    required_fields = ["token"]
+    if not request.json or not (set(required_fields).issubset(request.json)): 
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST
+    else:
+        #check if client submitted a valid token
+        try:
+            token = request.json['token']
+            client = controller.token_authenticate(token)
+                
+            if (not client or not client.is_admin()):
+                return jsonify({'message': 'You are not authorized to see all sessions.'}), status.HTTP_401_UNAUTHORIZED
+            else:
+                sessions = controller.getsessions()
+                num_results = len(sessions)
+                LOG.debug("number of results: %s" % num_results)
+                results = [ session.as_dict() for session in sessions ]
+                LOG.debug(results)
+                return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
+            
+        except KeyError:
+            return jsonify({'message': 'Bad request. You need to provide a valid token.'}), status.HTTP_400_BAD_REQUEST
+        except AuthenticationFailed as e:
+            LOG.warning(e.args)
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
+        except NoResultFound as e:
+            LOG.warning(e.args)
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
+        except TokenExpiredException as e:
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
+        except InvalidGamingSessionException as e:
+            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+######################################################
+# Game events
+######################################################
 
 @gameevents.route('/commitevent', methods=['POST'])
-def commitevent():
+def commit_event():
     """Receives a json request with a token, timestamp, and game event.
     """
     #Check if request is json and contains all the required fields
@@ -169,46 +220,6 @@ def get_events():
             LOG.error("Undefined exception when trying to read game events for a token.")
             LOG.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
-            
-@gameevents.route('/sessions', methods = ['POST'])
-def sessions():
-    """The client can request a list of active sessions. The POST request must be sent as JSON 
-    and include a valid "token".    
-    """  
+  
 
-    #Check if request is json and contains all the required fields
-    required_fields = ["token"]
-    if not request.json or not (set(required_fields).issubset(request.json)): 
-        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST
-    else:
-        #check if client submitted a valid token
-        try:
-            token = request.json['token']
-            client = controller.token_authenticate(token)
-                
-            if (not client or not client.is_admin()):
-                return jsonify({'message': 'You are not authorized to see all sessions.'}), status.HTTP_401_UNAUTHORIZED
-            else:
-                sessions = controller.getsessions()
-                num_results = len(sessions)
-                LOG.debug("number of results: %s" % num_results)
-                results = [ session.as_dict() for session in sessions ]
-                LOG.debug(results)
-                return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
-            
-        except KeyError:
-            return jsonify({'message': 'Bad request. You need to provide a valid token.'}), status.HTTP_400_BAD_REQUEST
-        except AuthenticationFailed as e:
-            LOG.warning(e.args)
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
-        except NoResultFound as e:
-            LOG.warning(e.args)
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
-        except TokenExpiredException as e:
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
-        except InvalidGamingSessionException as e:
-            abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
-        except Exception as e:
-            LOG.error(e, exc_info=True)
-            abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
     

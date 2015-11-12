@@ -34,12 +34,15 @@ class GameEvent(db.Model):
         self.gameevent = gameevent
         
     def __repr__(self):
+        """"""
         return '<GameEvent. id: %s; gamingsession_id: %s; gameevent: %s [...]>' % (self.id, self.gamingsession_id, self.gameevent[:100])
     
     def __eq__(self, other):
+        """"""
         return self.id == other.id and self.gameevent == other.gameevent and self.gamingsession_id == other.gamingsession_id
     
     def as_dict(self):
+        """Returns a dictionary version of the game event."""
         obj_d = {
             'id': self.id,
             'gamingsession_id': self.gamingsession_id,

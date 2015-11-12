@@ -39,6 +39,7 @@ class Client(db.Model):
         #self.token = None
         
     def as_dict(self):
+        """"""
         obj_d = {
             'id': self.id,
             'clientid': self.clientid,
@@ -46,15 +47,44 @@ class Client(db.Model):
         return obj_d
 
     def verify_apikey(self, apikey):
-        LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
+        """Checks if the client's apikey is valid."""
+        #LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
         verified = pwd_context.verify(apikey, self.apikey_hash)
         if verified:
             g.clientid = self.clientid
             return True
         else:
             return False
+        
+    @staticmethod
+    def verify_auth_token(token):
+        """"""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+            #LOG.debug("Got data: %s " % data)
+            try:
+                sessionid = data["sessionid"]
+            except KeyError:
+                sessionid = False
+            return dict(clientid=data['clientid'], id=data['id'], sessionid=sessionid)
+        except SignatureExpired as e:
+            #LOG.debug("Expired token, returning false")
+            #LOG.debug(e, exc_info=False)
+            raise AuthenticationFailed("Expired token.")
+            #return False # valid token, but expired
+        except BadSignature as e:
+            #LOG.debug("Invalid token, returning false.")
+            #LOG.debug(e, exc_info=False)
+            raise AuthenticationFailed("Bad token.")
+            #raise e
+            #return False # invalid token
+        except Exception as e:
+            LOG.error(e, exc_info=False)
+            raise e
 
     def is_session_authorized(self, sessionid):
+        """"""
         #Check if this client can read/write this sessionid
         if (sessionid != "zzzz" and sessionid != False): 
             return True
@@ -62,12 +92,14 @@ class Client(db.Model):
             return False
         
     def is_admin(self):
+        """"""
         if (self.clientid == "dashboard" or self.clientid == "masteroftheuniverse"):
             return True
         else: 
             return False
 
-    def generate_auth_token(self, sessionid = False, expiration = DEFAULT_TOKEN_DURATION): 
+    def generate_auth_token(self, sessionid = False, expiration = DEFAULT_TOKEN_DURATION):
+        """""" 
         if (not sessionid):
             if self.is_admin():       
                 s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)
@@ -84,24 +116,4 @@ class Client(db.Model):
                 raise AuthenticationFailed("You are not authorized to use this sessionid.")
 
         
-    @staticmethod
-    def verify_auth_token(token):
-        s = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            data = s.loads(token)
-            LOG.debug("Got data: %s " % data)
-            return dict(clientid=data['clientid'], id=data['id'])
-        except SignatureExpired as e:
-            #LOG.debug("Expired token, returning false")
-            #LOG.debug(e, exc_info=False)
-            raise AuthenticationFailed("Expired token.")
-            #return False # valid token, but expired
-        except BadSignature as e:
-            #LOG.debug("Invalid token, returning false.")
-            #LOG.debug(e, exc_info=False)
-            raise AuthenticationFailed("Bad token.")
-            #raise e
-            #return False # invalid token
-        except Exception as e:
-            LOG.error(e, exc_info=False)
-            raise e
+    

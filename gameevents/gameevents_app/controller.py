@@ -50,6 +50,7 @@ def newclient(clientid, apikey):
 ###################################################
 
 def getsessions():
+    """"""
     query = db.session.query(GamingSession)
     res_sessions = query.all()
     return res_sessions
@@ -61,13 +62,14 @@ def getsessions():
 ###################################################
 
 def recordgameevent(token, timestamp, gameevent):
+    """"""
     try:
         #Is this a valid token?
         LOG.debug("Verifying token...")
-        gamingsession = GamingSession.verify_auth_token(token)
-        if gamingsession and ("sessionid" in gamingsession) and ("clientid" in gamingsession):
-            sessionid = gamingsession["sessionid"]
-            clientid = gamingsession["clientid"]
+        client = Client.verify_auth_token(token)
+        if client and ("sessionid" in client) and ("clientid" in client):
+            sessionid = client["sessionid"]
+            clientid = client["clientid"]
             LOG.debug("sessionid: " + sessionid)
             query_sessionid = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid)
             res_sessionid = query_sessionid.one()
@@ -94,6 +96,7 @@ def recordgameevent(token, timestamp, gameevent):
     
     
 def getgameevents(token, sessionid):
+    """"""
     try:
         #Is Client authorized to see this session id?
         if is_client_authorized(token, sessionid):
@@ -113,6 +116,7 @@ def getgameevents(token, sessionid):
 ###################################################
 
 def getclient(clientid):
+    """"""
     try:
         client = db.session.query(Client).filter_by(clientid = clientid).one()
         return client
@@ -125,6 +129,7 @@ def getclient(clientid):
 ###################################################
 
 def gettoken(clientid, apikey, sessionid=False):
+    """"""
     go_on = False
     #Check if client is in the database
     client = db.session.query(Client).filter_by(clientid = clientid).first()
@@ -233,6 +238,7 @@ def gettoken(clientid, apikey, sessionid=False):
     
 
 def client_authenticate(clientid, apikey):
+    """"""
     try:
         client = db.session.query(Client).filter_by(clientid = clientid).one()
         LOG.debug("Found a client.")
@@ -245,6 +251,7 @@ def client_authenticate(clientid, apikey):
         raise AuthenticationFailed("Clientid does not exist.")
 
 def token_authenticate(token):
+    """"""
     try:
         token_client = Client.verify_auth_token(token)
         clientid_from_token = token_client["clientid"]
@@ -252,16 +259,16 @@ def token_authenticate(token):
         return client
     except NoResultFound:
         raise AuthenticationFailed("Clientid does not exist.")
-#     except AuthenticationFailed as e: 
-#         raise e
-            #let AuthenticationFailed raise on its own   
+
     
     
 def is_client_authorized(token, sessionid):
+    """"""
     #TODO: Implement this function!!! 
     return True
 
 def is_session_authorized(sessionid, clientid):
+    """"""
     return True
 #         
 #     #Session and client exist. Now, is this clientid authorized to read the session?

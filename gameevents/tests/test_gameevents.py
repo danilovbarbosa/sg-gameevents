@@ -198,12 +198,10 @@ class TestGameEvents(unittest.TestCase):
         timestamp = str(datetime.datetime.now())       
         
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        LOG.debug(requestdata)
         response = self.client.post('/gameevents/api/v1.0/commitevent', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
-
         self.assertEquals(response.status, "201 CREATED")
     
 
@@ -246,12 +244,10 @@ class TestGameEvents(unittest.TestCase):
         timestamp = str(datetime.datetime.now())       
         
         requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        LOG.debug(requestdata)
         response = self.client.post('/gameevents/api/v1.0/commitevent', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
-
         self.assertEquals(response.status, "401 UNAUTHORIZED")
       
      
