@@ -151,16 +151,19 @@ def get_events():
         token =  request.json['token']
         sessionid =  request.json['sessionid']
         try:
-            gameevents = controller.getgameevents(token, sessionid)
-            num_results = len(gameevents)
-            LOG.debug("number of results: %s" % num_results)
-            results = [ gameevent.as_dict() for gameevent in gameevents ]
-            LOG.debug(results)
-            return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
+            client = controller.token_authenticate(token)
+            if client.is_session_authorized(sessionid):
+                gameevents = controller.getgameevents(token, sessionid)
+                num_results = len(gameevents)
+                LOG.debug("number of results: %s" % num_results)
+                results = [ gameevent.as_dict() for gameevent in gameevents ]
+                LOG.debug(results)
+                return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
+            else:
+                return jsonify({'message': "Not authorized to see events for this session."}), status.HTTP_401_UNAUTHORIZED
             
         except AuthenticationFailed as e:
-            LOG.warning("Authentication failure when trying to read game events for a token.")
-            return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED  
+            return jsonify({'message': "Authentication failure when trying to read game events for a token."}), status.HTTP_401_UNAUTHORIZED  
         
         except Exception as e:
             LOG.error("Undefined exception when trying to read game events for a token.")
@@ -170,31 +173,22 @@ def get_events():
 @gameevents.route('/sessions', methods = ['POST'])
 def sessions():
     """The client can request a list of active sessions. The POST request must be sent as JSON 
-    and include a valid "clientid" and "apikey". A "sessionid" is optional.    
+    and include a valid "token".    
     """  
 
     #Check if request is json and contains all the required fields
-    required_fields = ["clientid", "apikey"]
+    required_fields = ["token"]
     if not request.json or not (set(required_fields).issubset(request.json)): 
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST
     else:
-        #check if client submitted a sessionid
-        clientid = request.json['clientid']
-        apikey = request.json['apikey']
-        
-        if "sessionid" in request.json:
-            sessionid = request.json['sessionid']
-        else:
-            sessionid = False
-            
-        if not sessionid:
-            #Is client an admin?
-            if not controller.is_admin(clientid):
-                return jsonify({'message': 'You are not authorized to see all sessions.'}), status.HTTP_401_UNAUTHORIZED
-        
+        #check if client submitted a valid token
         try:
-            token = controller.authenticate(clientid, apikey)
-            if token:
+            token = request.json['token']
+            client = controller.token_authenticate(token)
+                
+            if (not client or not client.is_admin()):
+                return jsonify({'message': 'You are not authorized to see all sessions.'}), status.HTTP_401_UNAUTHORIZED
+            else:
                 sessions = controller.getsessions()
                 num_results = len(sessions)
                 LOG.debug("number of results: %s" % num_results)
@@ -202,18 +196,17 @@ def sessions():
                 LOG.debug(results)
                 return jsonify({'count': num_results, 'results': results}), status.HTTP_200_OK
             
-            else:
-                LOG.debug("Could not authenticate, returning status 401.")
-                return jsonify({'message': 'Could not authenticate.'}), status.HTTP_401_UNAUTHORIZED
+        except KeyError:
+            return jsonify({'message': 'Bad request. You need to provide a valid token.'}), status.HTTP_400_BAD_REQUEST
         except AuthenticationFailed as e:
             LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
         except NoResultFound as e:
             LOG.warning(e.args)
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Could not authenticate. Please check your credentials and try again.'})
-        except TokenExpired as e:
+        except TokenExpiredException as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Your token expired. Please generate another one.'})
-        except InvalidGamingSession as e:
+        except InvalidGamingSessionException as e:
             abort(status.HTTP_401_UNAUTHORIZED, {'message': 'Invalid gaming session. Did the player authorize the use of their data?'})
         except Exception as e:
             LOG.error(e, exc_info=True)

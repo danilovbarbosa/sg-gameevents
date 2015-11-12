@@ -5,6 +5,7 @@ import datetime
 import json
 import sys
 import base64
+from werkzeug.wrappers import Response
 sys.path.append("..") 
 
 #from flask import current_app
@@ -205,7 +206,7 @@ class TestGameEvents(unittest.TestCase):
 
         self.assertEquals(response.status, "201 CREATED")
     
-    @unittest.skip
+
     def test_commit_gameevent_expiredtoken(self):
         token = self.myexpiredtoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">
@@ -229,7 +230,7 @@ class TestGameEvents(unittest.TestCase):
 
         self.assertEquals(response.status, "401 UNAUTHORIZED")
     
-    @unittest.skip
+    
     def test_commit_gameevent_badtoken(self):
         token = self.mybadtoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">
@@ -253,29 +254,28 @@ class TestGameEvents(unittest.TestCase):
 
         self.assertEquals(response.status, "401 UNAUTHORIZED")
       
-    @unittest.skip  
+     
     def test_getgameevents(self):
         token = self.mytoken.decode()
-        requestdata = json.dumps(dict(token=token))
-        LOG.debug(requestdata)
+        sessionid = "aaaa"
+        requestdata = json.dumps(dict(token=token, sessionid = sessionid))
         response = self.client.post('/gameevents/api/v1.0/events', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
-        LOG.warning(response.get_data())
         self.assertEquals(response.status, "200 OK")
      
-    @unittest.skip   
+      
     def test_getgameevents_badtoken(self):
         token = self.mybadtoken.decode()
-        requestdata = json.dumps(dict(token=token))
-        LOG.debug(requestdata)
+        sessionid = "aaaa"
+        requestdata = json.dumps(dict(token=token, sessionid = sessionid))
         response = self.client.post('/gameevents/api/v1.0/events', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
-        LOG.warning(response.get_data())
         self.assertEquals(response.status, "401 UNAUTHORIZED")
+
 
     def test_newclient_admintoken(self):
         token = self.myadmintoken.decode()
@@ -322,6 +322,21 @@ class TestGameEvents(unittest.TestCase):
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
+        
+        
+    def test_getsessions_validtoken(self):
+        token = self.myadmintoken.decode()   
+        
+        requestdata = json.dumps(dict(token=token))
+        LOG.debug(requestdata)
+        response = self.client.post('/gameevents/api/v1.0/sessions', 
+                                 data=requestdata, 
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+       
+        json_results = json.loads(response.get_data().decode())
+        self.assertEquals(response.status, "200 OK")
+        self.assertEquals(json_results["count"], 2)
         
 if __name__ == '__main__':
     unittest.main()
