@@ -42,4 +42,4 @@ See events commited in this session:
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN"}' http://localhost:5000/gameevents/api/v1.0/events
 
 See existing sessions:
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix","apikey":"lixapikey"}' http://localhost:5000/gameevents/api/v1.0/sessions
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN"}' http://localhost:5000/gameevents/api/v1.0/sessions
