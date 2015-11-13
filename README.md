@@ -3,14 +3,18 @@ A module for service-based serious games that listen for game events coming from
 
 ## Requires
 
-sudo apt-get install build-essential libssl-dev libffi-dev python3-dev
+sudo apt-get install build-essential  build-dep libssl-dev libffi-dev python3-dev python-psycopg2 postgresql postgresql-contrib libxslt-dev libpq-dev
 
 
-pip install flask flask-sqlalchemy flask-auth flask-api pyOpenSSL cryptography passlib sqlalchemy-migrate
+
 
 ## Try it out
 
-First, remember to activate the virtualenv, if any
+First, remember to activate the virtualenv, if any.
+
+Install the requirements
+
+pip install -r requirements.txt
  
 Then, create the database and the migration files:
 

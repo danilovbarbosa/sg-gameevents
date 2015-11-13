@@ -26,7 +26,7 @@ class Client(db.Model):
     """
     
     __tablename__ = "client"    
-    id = db.Column(db.String, primary_key=True)
+    id = db.Column(db.String(36), primary_key=True)
     clientid = db.Column(db.String, unique=True)
     apikey_hash = db.Column(db.String)
     role = db.Column(db.String)

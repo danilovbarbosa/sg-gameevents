@@ -14,7 +14,7 @@ from gameevents_app.errors import *
 #from flask_api.exceptions import NotFound
 
 # Models
-from gameevents_app.models.gamingsession import GamingSession
+from gameevents_app.models.session import Session
 from gameevents_app.models.client import Client
 from gameevents_app.models.gameevent import GameEvent
 
@@ -55,13 +55,13 @@ def new_client(clientid, apikey, role="normal"):
 
 def get_sessions():
     """"""
-    query = db.session.query(GamingSession)
+    query = db.session.query(Session)
     res_sessions = query.all()
     return res_sessions
     
 def new_session(sessionid):
     """TODO: associate the session to a client """
-    session = GamingSession(sessionid)
+    session = Session(sessionid)
     try:
         db.session.add(session)
         db.session.commit()
@@ -88,7 +88,7 @@ def record_gameevent(token, timestamp, gameevent):
     client = Client.verify_auth_token(token)
     if client and ("sessionid" in client):
         sessionid = client["sessionid"]
-        query_sessionid = db.session.query(GamingSession).filter(GamingSession.sessionid == sessionid)
+        query_sessionid = db.session.query(Session).filter(Session.id == sessionid)
         try:
             res_sessionid = query_sessionid.one()
         except NoResultFound:
@@ -96,7 +96,7 @@ def record_gameevent(token, timestamp, gameevent):
             # add it here.
             if (is_session_authorized(sessionid)):
                 res_session = new_session(sessionid)
-                res_sessionid = res_session.sessionid
+                res_sessionid = res_session.id
             else:
                 raise SessionNotAuthorizedException("You are not authorized to use this sessionid.")
             
@@ -122,7 +122,7 @@ def get_gameevents(token, sessionid):
     #Is Client authorized to see this session id?
     client = token_authenticate(token)
     if client.is_session_authorized(sessionid):
-        query_events = db.session.query(GameEvent).filter(GameEvent.gamingsession_id == sessionid)
+        query_events = db.session.query(GameEvent).filter(GameEvent.session_id == sessionid)
         res_events = query_events.all()
         #LOG.debug("Found %s results." % len(res_events))
         return res_events

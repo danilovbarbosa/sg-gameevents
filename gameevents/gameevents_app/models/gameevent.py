@@ -11,34 +11,34 @@ from ..extensions import db
     
 class GameEvent(db.Model):
     """Models 'gameevent' table in the database. Has columns id (UUID), gameevent (string) and 
-    gamingsessionid (a foreign key).
+    sessionid (a foreign key).
     """
     __tablename__ = "gameevent"
  
-    id = db.Column(db.String, primary_key=True)
+    id = db.Column(db.String(36), primary_key=True)
     gameevent = db.Column(db.String)
-    gamingsession_id = db.Column(db.Integer, db.ForeignKey('gamingsession.id'))
+    session_id = db.Column(db.String(36), db.ForeignKey('session.id'))
  
     #----------------------------------------------------------------------
-    def __init__(self, gamingsessionid, gameevent):
+    def __init__(self, sessionid, gameevent):
         """Initializes the game event with a sessionid and the body of the game event."""
         self.id = UUID(bytes = OpenSSL.rand.bytes(16)).hex
-        self.gamingsession_id = gamingsessionid
+        self.session_id = sessionid
         self.gameevent = gameevent
         
     def __repr__(self):
         """"""
-        return '<GameEvent. id: %s; gamingsession_id: %s; gameevent: %s [...]>' % (self.id, self.gamingsession_id, self.gameevent[:100])
+        return '<GameEvent. id: %s; session_id: %s; gameevent: %s [...]>' % (self.id, self.session_id, self.gameevent[:100])
     
     def __eq__(self, other):
         """"""
-        return self.id == other.id and self.gameevent == other.gameevent and self.gamingsession_id == other.gamingsession_id
+        return self.id == other.id and self.gameevent == other.gameevent and self.session_id == other.session_id
     
     def as_dict(self):
         """Returns a dictionary version of the game event."""
         obj_d = {
             'id': self.id,
-            'gamingsession_id': self.gamingsession_id,
+            'session_id': self.session_id,
             'gameevent': self.gameevent
         }
         return obj_d

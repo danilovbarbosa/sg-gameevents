@@ -18,9 +18,12 @@ from gameevents_app import create_app
 from gameevents_app.extensions import db, LOG
 
 
-from gameevents_app.models.gamingsession import GamingSession
+from gameevents_app.models.session import Session
 from gameevents_app.models.client import Client
 from gameevents_app.models.gameevent import GameEvent
+
+from uuid import UUID
+import OpenSSL
 
 #from gameevents_app.errors import InvalidGamingSession
 #from sqlalchemy.orm.exc import NoResultFound
@@ -48,14 +51,18 @@ class TestGameEvents(unittest.TestCase):
         new_client = Client("myclientid", "myapikey", "normal")
         new_admin_client = Client("dashboard", "dashboardapikey", "admin")        
         
-        #Adding one gaming session 
-        new_gamingsession = GamingSession("aaaa")
+        #Generating gaming sessions ids
+        self.newsessionid = UUID(bytes = OpenSSL.rand.bytes(16)).hex
+        self.newsessionid2 = UUID(bytes = OpenSSL.rand.bytes(16)).hex
+        self.newsessionid3 = UUID(bytes = OpenSSL.rand.bytes(16)).hex #session not in db
+        
+        new_session = Session(self.newsessionid)
         
         #Generating tokens        
-        self.mytoken = new_client.generate_auth_token("aaaa")
-        self.myexpiredtoken = new_client.generate_auth_token("aaaa", expiration=1)
+        self.mytoken = new_client.generate_auth_token(self.newsessionid)
+        self.myexpiredtoken = new_client.generate_auth_token(self.newsessionid, expiration=1)
         
-        self.mytokennewsession = new_client.generate_auth_token("aaaanewsession")
+        self.mytokennewsession = new_client.generate_auth_token(self.newsessionid3)
         
         self.myadmintoken = new_admin_client.generate_auth_token()
         self.myexpiredadmintoken = new_admin_client.generate_auth_token(expiration=1)
@@ -67,7 +74,8 @@ class TestGameEvents(unittest.TestCase):
         
         
         
-        new_gamingsession2 = GamingSession('bbbb')
+        
+        new_session2 = Session(self.newsessionid2)
         #new_gamingsession2.status = False
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
@@ -79,10 +87,10 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        new_gameevent = GameEvent(new_gamingsession.id,gameevent)
+        new_gameevent = GameEvent(new_session.id,gameevent)
         
-        db.session.add(new_gamingsession)
-        db.session.add(new_gamingsession2)
+        db.session.add(new_session)
+        db.session.add(new_session2)
         db.session.add(new_gameevent)
         db.session.add(new_client)
         db.session.add(new_admin_client)
@@ -96,7 +104,7 @@ class TestGameEvents(unittest.TestCase):
     def tearDownClass(self):
         LOG.info("======================Finished tests====================")
         db.session.remove()
-        db.drop_all()
+        #db.drop_all()
         self.app_context.pop()
     
     #@unittest.skip
