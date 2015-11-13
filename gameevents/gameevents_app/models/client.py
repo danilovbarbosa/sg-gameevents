@@ -27,15 +27,17 @@ class Client(db.Model):
     
     __tablename__ = "client"    
     id = db.Column(db.String, primary_key=True)
-    clientid = db.Column(db.String)
+    clientid = db.Column(db.String, unique=True)
     apikey_hash = db.Column(db.String)
+    role = db.Column(db.String)
 
 
-    def __init__(self, clientid, apikey):
+    def __init__(self, clientid, apikey, role):
         """Initialize client class with the data provided, and encrypting password."""
         self.id = UUID(bytes = OpenSSL.rand.bytes(16)).hex
         self.clientid = clientid
         self.apikey_hash = pwd_context.encrypt(apikey)
+        self.role = role
         #self.token = None
         
     def as_dict(self):
@@ -43,6 +45,7 @@ class Client(db.Model):
         obj_d = {
             'id': self.id,
             'clientid': self.clientid,
+            'role': self.role,
         }
         return obj_d
     
@@ -56,7 +59,7 @@ class Client(db.Model):
         
     def is_admin(self):
         """Checks if the client is an admin. Returns boolean."""
-        if (self.clientid == "dashboard" or self.clientid == "masteroftheuniverse"):
+        if (self.role == "admin"):
             return True
         else: 
             return False

@@ -26,15 +26,18 @@ from .extensions import db, LOG
 #    Client functions
 ###################################################
 
-def new_client(clientid, apikey):
+def new_client(clientid, apikey, role="normal"):
     """ Adds a new client to the database.
     TODO: Protect this function so that only admins have access.
     """
+    if role != "admin":
+        role = "normal"
+        
     if clientid is None or apikey is None:
         raise ParseError('Invalid parameters')
     if db.session.query(Client).filter_by(clientid = clientid).first() is not None:
         raise ClientExistsException('Client exists')
-    client = Client(clientid, apikey)
+    client = Client(clientid, apikey, role)
     db.session.add(client)
     try:
         db.session.commit()

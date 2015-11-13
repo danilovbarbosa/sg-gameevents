@@ -23,7 +23,7 @@ $ python gameevents/run.py
 
 Request an admin token:
 
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"masteroftheuniverse","apikey":"nevermind"}' http://localhost:5000/gameevents/api/v1.0/token
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"administrator","apikey":"YOURAPIKEY"}' http://localhost:5000/gameevents/api/v1.0/token
 
 Add clients to the database using the admin token:
 

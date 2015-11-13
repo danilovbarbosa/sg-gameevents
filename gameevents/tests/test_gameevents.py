@@ -45,8 +45,8 @@ class TestGameEvents(unittest.TestCase):
         db.create_all()
         
         #Add a clientid and apikey
-        new_client = Client("myclientid", "myapikey")
-        new_admin_client = Client("dashboard", "dashboardapikey")        
+        new_client = Client("myclientid", "myapikey", "normal")
+        new_admin_client = Client("dashboard", "dashboardapikey", "admin")        
         
         #Adding one gaming session 
         new_gamingsession = GamingSession("aaaa")
@@ -155,7 +155,7 @@ class TestGameEvents(unittest.TestCase):
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         # Assert response is 200 OK.                                           
-        self.assertEquals(response.status, "200 OK")
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
 
     def test_token_badparams(self):
         """Make a test request with invalid/missing parameters.

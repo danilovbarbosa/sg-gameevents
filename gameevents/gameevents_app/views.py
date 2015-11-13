@@ -57,15 +57,7 @@ def get_token():
         except KeyError:
             sessionid = False
             
-        ###########################################
-        if clientid == "masteroftheuniverse":
-            #Temporary solution to be able to create a first admin user
-            from .models.client import Client
-            client = Client(clientid, "whicheverpassyouwant")
-            token = client.generate_auth_token(sessionid)
-            return jsonify({ 'token': token.decode('ascii') })
-        ###########################################
-        
+      
         try:
             client = controller.client_authenticate(clientid, apikey)
             token = client.generate_auth_token(sessionid)
@@ -88,7 +80,7 @@ def get_token():
 @admin.route('/client', methods = ['POST'])
 def new_client():
     """An admin can add a new client by posting a request with a valid admin token, 
-    the clientid to be created and the apikey. 
+    the clientid to be created, the apikey and the optional role (admin or normal). 
     """
     
     #Check if request is json and contains all the required fields
@@ -102,10 +94,15 @@ def new_client():
         newapikey = request.json.get('apikey')
         
         try:
+            role = request.json.get('role')
+        except Exception:
+            role = "normal"
+        
+        try:
             current_client = controller.token_authenticate(token)
             is_current_client_admin = current_client.is_admin()
             if (current_client and is_current_client_admin):
-                client = controller.new_client(newclientid, newapikey)
+                client = controller.new_client(newclientid, newapikey, role)
                 return jsonify({'message': 'Client ID created, id %s ' % client.clientid}), status.HTTP_201_CREATED
             else:
                 return jsonify({'message': 'Sorry, you are not allowed to do this action.'}), status.HTTP_401_UNAUTHORIZED
