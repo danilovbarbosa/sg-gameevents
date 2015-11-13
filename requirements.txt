@@ -35,9 +35,9 @@ guess-language==0.2
 idna==2.0
 itsdangerous==0.24
 lxml==3.4.4
+mysqlclient==1.3.7
 passlib==1.6.5
 pbr==1.8.1
-psycopg2==2.6.1
 pyOpenSSL==0.15.1
 pyasn1==0.1.9
 pycparser==2.14

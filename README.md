@@ -3,7 +3,7 @@ A module for service-based serious games that listen for game events coming from
 
 ## Requires
 
-sudo apt-get install build-essential  build-dep libssl-dev libffi-dev python3-dev python-psycopg2 postgresql postgresql-contrib libxslt-dev libpq-dev
+sudo apt-get install build-essential  build-dep libssl-dev libffi-dev python3-dev libxslt-dev libmysqlclient-dev python-mysqldb mysql-server
 
 
 

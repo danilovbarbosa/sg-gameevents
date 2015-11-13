@@ -27,9 +27,9 @@ class Client(db.Model):
     
     __tablename__ = "client"    
     id = db.Column(db.String(36), primary_key=True)
-    clientid = db.Column(db.String, unique=True)
-    apikey_hash = db.Column(db.String)
-    role = db.Column(db.String)
+    clientid = db.Column(db.String(255), unique=True)
+    apikey_hash = db.Column(db.String(255))
+    role = db.Column(db.String(16))
 
 
     def __init__(self, clientid, apikey, role):

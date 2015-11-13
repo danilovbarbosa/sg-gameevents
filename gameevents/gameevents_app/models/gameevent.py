@@ -16,7 +16,7 @@ class GameEvent(db.Model):
     __tablename__ = "gameevent"
  
     id = db.Column(db.String(36), primary_key=True)
-    gameevent = db.Column(db.String)
+    gameevent = db.Column(db.UnicodeText())
     session_id = db.Column(db.String(36), db.ForeignKey('session.id'))
  
     #----------------------------------------------------------------------
