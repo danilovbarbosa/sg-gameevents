@@ -45,7 +45,7 @@ class Session(db.Model):
         #self.status = True
         self.id = sessionid
         self.client_id = client_id
-        self.timestamp = datetime.datetime.utcnow()
+        self.timestamp = datetime.datetime.utcnow() 
         
     def __eq__(self, other):
         """"""
@@ -61,6 +61,7 @@ class Session(db.Model):
         obj_d = {
             'id': self.id,
             'client_id': self.client_id,
+            'timestamp':self.timestamp
         }
         #gameevents_LOG.debug(obj_d)
         return obj_d
