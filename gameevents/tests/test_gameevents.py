@@ -117,7 +117,7 @@ class TestGameEvents(unittest.TestCase):
     def tearDownClass(self):
         LOG.info("======================Finished tests====================")
         db.session.remove()
-        #db.drop_all()
+        db.drop_all()
         self.app_context.pop()
     
     #@unittest.skip
