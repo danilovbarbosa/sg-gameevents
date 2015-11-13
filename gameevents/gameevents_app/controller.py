@@ -20,6 +20,7 @@ from gameevents_app.models.gameevent import GameEvent
 
 #Extensions
 from .extensions import db, LOG
+from flask_api.exceptions import NotAuthenticated
 
 
 ###################################################
@@ -59,9 +60,8 @@ def get_sessions():
     res_sessions = query.all()
     return res_sessions
     
-def new_session(sessionid):
-    """TODO: associate the session to a client """
-    session = Session(sessionid)
+def new_session(sessionid, client_id):
+    session = Session(sessionid, client_id)
     try:
         db.session.add(session)
         db.session.commit()
@@ -93,12 +93,21 @@ def record_gameevent(token, timestamp, gameevent):
             res_sessionid = query_sessionid.one()
         except NoResultFound:
             # SessionID is not in the db. Ask the userprofile service and if authorized, 
-            # add it here.
-            if (is_session_authorized(sessionid)):
-                res_session = new_session(sessionid)
-                res_sessionid = res_session.id
-            else:
-                raise SessionNotAuthorizedException("You are not authorized to use this sessionid.")
+            # add it in the local db with a timestamp to be able to expire it.
+            
+            
+            try:
+                #fetch client object
+                client_obj = get_client(client["clientid"])
+                if (is_session_authorized(sessionid)):
+                    res_session = new_session(sessionid, client_obj.id)
+                    res_sessionid = res_session.id
+                else:
+                    raise SessionNotAuthorizedException("You are not authorized to use this sessionid.")
+            except NoResultFound:
+                raise NotAuthenticated("This clientid is not valid.")
+                #This is strange, and should not happen that a token has a valid clientid for a client not in db
+            
             
             
         if (res_sessionid):

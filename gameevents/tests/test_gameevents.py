@@ -56,7 +56,7 @@ class TestGameEvents(unittest.TestCase):
         self.newsessionid2 = UUID(bytes = OpenSSL.rand.bytes(16)).hex
         self.newsessionid3 = UUID(bytes = OpenSSL.rand.bytes(16)).hex #session not in db
         
-        new_session = Session(self.newsessionid)
+        new_session = Session(self.newsessionid, new_client.id)
         
         #Generating tokens        
         self.mytoken = new_client.generate_auth_token(self.newsessionid)
@@ -75,7 +75,7 @@ class TestGameEvents(unittest.TestCase):
         
         
         
-        new_session2 = Session(self.newsessionid2)
+        new_session2 = Session(self.newsessionid2, new_client.id)
         #new_gamingsession2.status = False
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
@@ -89,13 +89,26 @@ class TestGameEvents(unittest.TestCase):
                         </event>'''
         new_gameevent = GameEvent(new_session.id,gameevent)
         
-        db.session.add(new_session)
-        db.session.add(new_session2)
-        db.session.add(new_gameevent)
         db.session.add(new_client)
         db.session.add(new_admin_client)
         try:
             db.session.commit()
+            LOG.info("=== Added clients ===")
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            
+        db.session.add(new_session)
+        db.session.add(new_session2)
+        try:
+            db.session.commit()
+            LOG.info("=== Added sessions ===")
+        except Exception as e:
+            LOG.error(e, exc_info=True)
+            
+        db.session.add(new_gameevent)        
+        try:
+            db.session.commit()
+            LOG.info("=== Added game event. All set up. ===")
         except Exception as e:
             LOG.error(e, exc_info=True)
 
