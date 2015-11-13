@@ -8,6 +8,8 @@ Created on 10 Nov 2015
 #from flask import current_app
 from ..extensions import db
 
+import datetime
+
 #Logging
 # from logging import getLogger
 # LOG = getLogger(__name__)
@@ -32,6 +34,7 @@ class Session(db.Model):
     #status = db.Column(db.Boolean)
     #clients = db.relationship("Client", secondary=sessions_clients)
     client_id = db.Column(db.String(36), db.ForeignKey('client.id'))
+    timestamp = db.Column(db.DateTime(True))
     gameevents = db.relationship("GameEvent", backref="session")
  
     #----------------------------------------------------------------------
@@ -42,6 +45,7 @@ class Session(db.Model):
         #self.status = True
         self.id = sessionid
         self.client_id = client_id
+        self.timestamp = datetime.datetime.utcnow()
         
     def __eq__(self, other):
         """"""

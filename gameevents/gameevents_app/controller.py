@@ -74,7 +74,8 @@ def new_session(sessionid, client_id):
         raise e  
     
 def is_session_authorized(sessionid):
-    """TODO: Implement this function to check with user profile if the pair is valid."""
+    """TODO: Implement this function to check using timestamp and/or 
+    with user profile service if the pair is valid."""
     return True
     
 
