@@ -66,5 +66,8 @@ db_repository/
 #TMP folder
 tmp/
 
+#Config file
+**/config.py
+
 #Eclipse Pydev project
 .pydevproject
