@@ -26,10 +26,11 @@ class Client(db.Model):
     """
     
     __tablename__ = "client"    
-    id = db.Column(db.String(36), primary_key=True)
+    id = db.Column(db.String(36), primary_key=True) # Referenced in Sessionid
     clientid = db.Column(db.String(255), unique=True)
     apikey_hash = db.Column(db.String(255))
-    role = db.Column(db.String(16))
+    role = db.Column(db.String(6))
+    sessions = db.relationship("Session", backref="client")
 
 
     def __init__(self, clientid, apikey, role):
