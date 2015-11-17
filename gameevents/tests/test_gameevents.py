@@ -216,6 +216,9 @@ class TestGameEvents(unittest.TestCase):
     
     def test_commit_gameevent_validtoken(self):
         token = self.mytoken.decode()
+        headers = {}
+        sessionid = self.newsessionid
+        headers['X-AUTH-TOKEN'] = token
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
                            <ship load="INF_SHIP_STEALTH" hostile="false"/>
@@ -226,10 +229,18 @@ class TestGameEvents(unittest.TestCase):
                                 </event>
                            </choice>
                         </event>'''
-        timestamp = str(datetime.datetime.now())      
+        timestamp = str(datetime.datetime.now())    
+        requestdata = json.dumps(dict(timestamp=timestamp, gameevent=gameevent))
+        response = self.client.post('/gameevents/api/v1.0/sessions/%s/events' % sessionid, 
+                                 data=requestdata, 
+                                 headers=headers,
+                                 content_type = 'application/json', 
+                                 follow_redirects=True)
+        self.assertEquals(response.status, "201 CREATED")  
         
     def test_commit_gameevent_validtoken_newsessionid(self):
         token = self.mytokennewsession.decode()
+        sessionid = self.newsessionid3
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
                            <ship load="INF_SHIP_STEALTH" hostile="false"/>
@@ -241,10 +252,13 @@ class TestGameEvents(unittest.TestCase):
                            </choice>
                         </event>'''
         timestamp = str(datetime.datetime.now())     
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
         
-        requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        response = self.client.post('/gameevents/api/v1.0/commitevent', 
+        requestdata = json.dumps(dict(timestamp=timestamp, gameevent=gameevent))
+        response = self.client.post('/gameevents/api/v1.0/sessions/%s/events' % sessionid, 
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "201 CREATED")
@@ -252,6 +266,7 @@ class TestGameEvents(unittest.TestCase):
 
     def test_commit_gameevent_expiredtoken(self):
         token = self.myexpiredtoken.decode()
+        sessionid = self.newsessionid
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
                            <ship load="INF_SHIP_STEALTH" hostile="false"/>
@@ -263,9 +278,14 @@ class TestGameEvents(unittest.TestCase):
                            </choice>
                         </event>'''
         timestamp = str(datetime.datetime.now())
-        requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        response = self.client.post('/gameevents/api/v1.0/commitevent', 
+        requestdata = json.dumps(dict(timestamp=timestamp, gameevent=gameevent))
+        
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        
+        response = self.client.post('/gameevents/api/v1.0/sessions/%s/events' % sessionid, 
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
 
@@ -273,6 +293,7 @@ class TestGameEvents(unittest.TestCase):
     
     
     def test_commit_gameevent_badtoken(self):
+        sessionid = self.newsessionid
         token = self.mybadtoken.decode()
         gameevent = '''<event name="INF_STEALTH_FOUND">
                            <text>With the adjustment made to your sensors, you pick up a signal! You attempt to hail them, but get no response.</text>
@@ -286,9 +307,13 @@ class TestGameEvents(unittest.TestCase):
                         </event>'''
         timestamp = str(datetime.datetime.now())       
         
-        requestdata = json.dumps(dict(token=token, timestamp=timestamp, gameevent=gameevent))
-        response = self.client.post('/gameevents/api/v1.0/commitevent', 
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        
+        requestdata = json.dumps(dict(timestamp=timestamp, gameevent=gameevent))
+        response = self.client.post('/gameevents/api/v1.0/sessions/%s/events' % sessionid, 
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
@@ -296,10 +321,11 @@ class TestGameEvents(unittest.TestCase):
      
     def test_getgameevents(self):
         token = self.mytoken.decode()
-        sessionid = "aaaa"
-        requestdata = json.dumps(dict(token=token, sessionid = sessionid))
-        response = self.client.post('/gameevents/api/v1.0/events', 
-                                 data=requestdata, 
+        sessionid = self.newsessionid
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        response = self.client.get('/gameevents/api/v1.0/sessions/%s/events' % sessionid, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "200 OK")
@@ -307,10 +333,11 @@ class TestGameEvents(unittest.TestCase):
       
     def test_getgameevents_badtoken(self):
         token = self.mybadtoken.decode()
-        sessionid = "aaaa"
-        requestdata = json.dumps(dict(token=token, sessionid = sessionid))
-        response = self.client.post('/gameevents/api/v1.0/events', 
-                                 data=requestdata, 
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        sessionid = self.newsessionid
+        response = self.client.get('/gameevents/api/v1.0/sessions/%s/events' % sessionid, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
@@ -318,16 +345,19 @@ class TestGameEvents(unittest.TestCase):
 
     def test_newclient_admintoken(self):
         token = self.myadmintoken.decode()
-        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
-        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/clients', 
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "201 CREATED")
         
     def test_newclient_bad_request_missing_params(self):
         requestdata = json.dumps(dict(clientid="lix", apikey="lixapikey"))
-        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+        response = self.client.post('/gameevents/api/v1.0/admin/clients', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
@@ -336,36 +366,48 @@ class TestGameEvents(unittest.TestCase):
         
     def test_newexistingclient(self):
         token = self.myadmintoken.decode()
-        requestdata = json.dumps(dict(token=token, clientid="myclientid", apikey="testapikey"))
-        response = self.client.post('/gameevents/api/v1.0/admin/client',
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/clients',
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "409 CONFLICT")
         
     def test_newclient_nonadmintoken(self):
         token = self.mytoken.decode()
-        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
-        response = self.client.post('/gameevents/api/v1.0/admin/client', 
-                                 data=requestdata, 
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/clients', 
+                                 data=requestdata,
+                                 headers=headers, 
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
         
     def test_newclient_expiredadmintoken(self):
         token = self.myexpiredadmintoken.decode()
-        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
-        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/clients', 
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
                 
     def test_newclient_badtoken(self):
         token = self.mybadtoken.decode()
-        requestdata = json.dumps(dict(token=token, clientid="testclientid", apikey="testapikey"))
-        response = self.client.post('/gameevents/api/v1.0/admin/client', 
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        requestdata = json.dumps(dict(clientid="testclientid", apikey="testapikey"))
+        response = self.client.post('/gameevents/api/v1.0/admin/clients', 
                                  data=requestdata, 
+                                 headers=headers,
                                  content_type = 'application/json', 
                                  follow_redirects=True)
         self.assertEquals(response.status, "401 UNAUTHORIZED")
@@ -373,16 +415,32 @@ class TestGameEvents(unittest.TestCase):
         
     def test_getsessions_validtoken(self):
         token = self.myadmintoken.decode()   
-        
-        requestdata = json.dumps(dict(token=token))
-        response = self.client.post('/gameevents/api/v1.0/sessions', 
-                                 data=requestdata, 
-                                 content_type = 'application/json', 
-                                 follow_redirects=True)
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+
+        response = self.client.get('/gameevents/api/v1.0/sessions', 
+                                   headers=headers, 
+                                   follow_redirects=True)
        
-        json_results = json.loads(response.get_data().decode())
+        #json_results = json.loads(response.get_data().decode())
         self.assertEquals(response.status, "200 OK")
-        self.assertEquals(json_results["count"], 3)
+        self.assertEquals(response.headers["X-Total-Count"], '3')
+        
+    def test_getsessions_notoken(self):
+        response = self.client.get('/gameevents/api/v1.0/sessions', 
+                                   follow_redirects=True)
+        self.assertEquals(response.status, "400 BAD REQUEST")
+        
+        
+    def test_getsessions_invalidtoken(self):
+        token = self.myexpiredadmintoken.decode()  
+        headers = {}
+        headers['X-AUTH-TOKEN'] = token
+        response = self.client.get('/gameevents/api/v1.0/sessions', 
+                                   headers=headers, 
+                                   follow_redirects=True)       
+        self.assertEquals(response.status, "401 UNAUTHORIZED")
+      
         
 if __name__ == '__main__':
     unittest.main()

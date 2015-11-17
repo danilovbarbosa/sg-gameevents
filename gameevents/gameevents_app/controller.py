@@ -20,7 +20,7 @@ from gameevents_app.models.gameevent import GameEvent
 
 #Extensions
 from .extensions import db, LOG
-from flask_api.exceptions import NotAuthenticated
+from flask_api.exceptions import NotAuthenticated, NotAcceptable
 
 
 ###################################################
@@ -83,12 +83,15 @@ def is_session_authorized(sessionid):
 #    Game events functions
 ###################################################
 
-def record_gameevent(token, timestamp, gameevent):
+def record_gameevent(sessionid, token, timestamp, gameevent):
     """Checks if the token is valid and records the game event in the database."""
 
     client = Client.verify_auth_token(token)
+    
     if client and ("sessionid" in client):
-        sessionid = client["sessionid"]
+        if sessionid != client["sessionid"]:
+            raise NotAcceptable("Requested sessionID and token sessionid do not match.")
+        
         query_sessionid = db.session.query(Session).filter(Session.id == sessionid)
         try:
             res_sessionid = query_sessionid.one()
