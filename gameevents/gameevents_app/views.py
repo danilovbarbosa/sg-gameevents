@@ -66,6 +66,8 @@ def get_token():
         except KeyError:
             sessionid = False
             
+        LOG.debug(request.get_data().decode())
+            
       
         try:
             client = controller.client_authenticate(clientid, apikey)
