@@ -67,9 +67,10 @@ class Client(db.Model):
 
     def verify_apikey(self, apikey):
         """Checks if the client's apikey is valid. Returns boolean."""
-        #LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
+        LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
         verified = pwd_context.verify(apikey, self.apikey_hash)
         if verified:
+            LOG.debug("Good credentials, continue.")
             #g.clientid = self.clientid
             return True
         else:
