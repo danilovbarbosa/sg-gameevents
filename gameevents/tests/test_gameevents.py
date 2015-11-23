@@ -120,11 +120,11 @@ class TestGameEvents(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
     
-    #@unittest.skip
+    
     def test_token_existing_sessionid(self):
         """Make a test request for a login with valid credentials and existing sessionid.
         """
-        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid = "aaaa"))
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -136,7 +136,7 @@ class TestGameEvents(unittest.TestCase):
     def test_token_nonexisting_but_valid_sessionid(self):
         """Make a test request for a login with valid credentials and a valid - but still not in the db - sessionid.
         """
-        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="xxxx"))
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
@@ -148,7 +148,7 @@ class TestGameEvents(unittest.TestCase):
     def test_token_invalid_sessionid(self):
         """Make a test request for a login with valid credentials but invalid sessionid.
         """
-        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid="zzzz"))
+        requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
                                  content_type = 'application/json', 
