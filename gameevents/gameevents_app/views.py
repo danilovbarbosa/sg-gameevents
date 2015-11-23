@@ -66,7 +66,7 @@ def get_token():
         except KeyError:
             sessionid = False
             
-        LOG.debug(request.get_data().decode())
+        #LOG.debug(request.get_data().decode())
             
       
         try:
