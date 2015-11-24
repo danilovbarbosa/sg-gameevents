@@ -38,6 +38,14 @@ gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0'
 admin = Blueprint('admin', __name__, url_prefix='/gameevents/api/v1.0/admin')
 
 
+######################################################
+# Handshake
+######################################################
+
+@gameevents.route('/version')
+def get_version():
+    return jsonify({'data': [{'version':'v1.0'}] }), status.HTTP_200_OK
+
 
 ######################################################
 # Authentication
