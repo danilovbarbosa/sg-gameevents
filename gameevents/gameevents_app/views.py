@@ -189,10 +189,11 @@ def commit_event(sessionid):
     The authentication token must be passed as a X-AUTH-TOKEN header.
     The user must be authorized to read/write the session.
     """
+    
+    
  
     try:
         json_results = request.json
-        #json = request.json    
 
         auth_token = request.headers.get('X-AUTH-TOKEN', None)
     
@@ -204,7 +205,7 @@ def commit_event(sessionid):
         if (not json_results) or (not set(required_fields).issubset(json_results)):
             return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
         else:            
-            success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], json_results['gameevent']) 
+            success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], str(json_results['gameevent'][0])) 
             if success:
                 return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
             else:

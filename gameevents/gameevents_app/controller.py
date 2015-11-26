@@ -115,6 +115,8 @@ def record_gameevent(sessionid, token, timestamp, gameevent):
             
             
         if (res_sessionid):
+            #TODO: Validate the game event against XML schema or JSON-LD context?
+            
             new_gameevent = GameEvent(sessionid, gameevent)
             db.session.add(new_gameevent)
             try:
