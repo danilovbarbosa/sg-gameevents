@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify, request, abort, make_response
 from flask.json import dumps
 from flask.ext.api import status 
 #from flask.helpers import make_response
+import simplejson
 
 #Exceptions and errors
 from flask.ext.api.exceptions import AuthenticationFailed, ParseError
@@ -201,11 +202,11 @@ def commit_event(sessionid):
             return jsonify({'errors':[{'userMessage':"Missing header ['X-AUTH-TOKEN']."}]}), status.HTTP_400_BAD_REQUEST         
     
         #Check if request is json and contains all the required fields
-        required_fields = ["gameevent", "timestamp"] 
+        required_fields = ["events", "timestamp"] 
         if (not json_results) or (not set(required_fields).issubset(json_results)):
             return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
         else:            
-            success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], str(json_results['gameevent'][0])) 
+            success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], simplejson.dumps(json_results['events'])) 
             if success:
                 return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
             else:

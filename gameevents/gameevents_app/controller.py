@@ -7,11 +7,17 @@ of the application when called by the views.
 
 # Exceptions and errors
 from flask.ext.api.exceptions import AuthenticationFailed, ParseError
+from lxml.etree import XMLSyntaxError
+from simplejson.scanner import JSONDecodeError
+
 from sqlalchemy.orm.exc import NoResultFound 
 from gameevents_app.errors import *
 #from itsdangerous import BadSignature, SignatureExpired
 #from werkzeug.exceptions import Unauthorized
 #from flask_api.exceptions import NotFound
+
+import simplejson
+from lxml import objectify
 
 # Models
 from gameevents_app.models.session import Session
@@ -83,7 +89,7 @@ def is_session_authorized(sessionid):
 #    Game events functions
 ###################################################
 
-def record_gameevent(sessionid, token, timestamp, gameevent):
+def record_gameevent(sessionid, token, timestamp, events):
     """Checks if the token is valid and records the game event in the database."""
 
     client = Client.verify_auth_token(token)
@@ -113,21 +119,43 @@ def record_gameevent(sessionid, token, timestamp, gameevent):
                 #This is strange, and should not happen that a token has a valid clientid for a client not in db
             
             
-            
+        serialized_events = False
+        #LOG.debug(events)
+        
         if (res_sessionid):
             #TODO: Validate the game event against XML schema or JSON-LD context?
             
-            new_gameevent = GameEvent(sessionid, gameevent)
-            db.session.add(new_gameevent)
             try:
-                db.session.commit()
-                return True
-            except Exception as e:
-                LOG.warning(e)
-                db.session.rollback()
-                db.session.flush() # for resetting non-commited .add()
-                LOG.error(e, exc_info=True)
-                raise e                
+                decoded_event = simplejson.loads(events)
+                serialized_events = simplejson.dumps(decoded_event)
+                #LOG.debug("found json")
+                #LOG.debug(serialized_events)
+            except JSONDecodeError:
+                #LOG.debug("not json, maybe xml?")
+                #Not json, try xml?
+                try:
+                    decoded_event = objectify.fromstring(events)
+                    serialized_events = simplejson.dumps(decoded_event.serialize)
+                    #LOG.debug("found xml")
+                    #LOG.debug(serialized_events)
+                except XMLSyntaxError:
+                    #LOG.debug("not json, not xml, who are you?")
+                    serialized_events = False
+            
+            
+            if serialized_events:
+                for serialized_event in serialized_events:          
+                    new_gameevent = GameEvent(sessionid, serialized_event)
+                    db.session.add(new_gameevent)
+                    try:
+                        db.session.commit()
+                        return True
+                    except Exception as e:
+                        LOG.warning(e)
+                        db.session.rollback()
+                        db.session.flush() # for resetting non-commited .add()
+                        LOG.error(e, exc_info=True)
+                        raise e                
     else:
         raise AuthenticationFailed('Unauthorized token.') 
 
