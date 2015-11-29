@@ -17,7 +17,7 @@ from gameevents_app.errors import *
 #from flask_api.exceptions import NotFound
 
 import simplejson
-from lxml import objectify
+from lxml import etree, objectify
 
 # Models
 from gameevents_app.models.session import Session
@@ -27,6 +27,7 @@ from gameevents_app.models.gameevent import GameEvent
 #Extensions
 from .extensions import db, LOG
 from flask_api.exceptions import NotAuthenticated, NotAcceptable
+
 
 
 ###################################################
@@ -94,6 +95,7 @@ def record_gameevent(sessionid, token, timestamp, events):
 
     client = Client.verify_auth_token(token)
     
+   
     if client and ("sessionid" in client):
         if sessionid != client["sessionid"]:
             raise NotAcceptable("Requested sessionID and token sessionid do not match.")
@@ -120,30 +122,26 @@ def record_gameevent(sessionid, token, timestamp, events):
             
             
         serialized_events = False
-        #LOG.debug(events)
+        decoded_events = False
+        
         
         if (res_sessionid):
             #TODO: Validate the game event against XML schema or JSON-LD context?
+            LOG.debug(type(events))          
+            
             
             try:
-                decoded_event = simplejson.loads(events)
-                serialized_events = simplejson.dumps(decoded_event)
-                #LOG.debug("found json")
-                #LOG.debug(serialized_events)
+                decoded_events = simplejson.loads(events)
+                LOG.debug("found json")
+                LOG.debug(decoded_events)
+                serialized_events = simplejson.dumps(decoded_events)
             except JSONDecodeError:
-                #LOG.debug("not json, maybe xml?")
-                #Not json, try xml?
-                try:
-                    decoded_event = objectify.fromstring(events)
-                    serialized_events = simplejson.dumps(decoded_event.serialize)
-                    #LOG.debug("found xml")
-                    #LOG.debug(serialized_events)
-                except XMLSyntaxError:
-                    #LOG.debug("not json, not xml, who are you?")
-                    serialized_events = False
+                LOG.debug("not json")
+            
             
             
             if serialized_events:
+                
                 for serialized_event in serialized_events:          
                     new_gameevent = GameEvent(sessionid, serialized_event)
                     db.session.add(new_gameevent)
@@ -215,4 +213,17 @@ def token_authenticate(token):
         else:
             raise AuthenticationFailed("Clientid does not exist.")
 
+def is_json(string):
+    try:
+        json_object = simplejson.loads(string)
+    except ValueError:
+        return False
+    return True
+
+def is_xml(string):
+    try:
+        result = objectify.fromstring(string)
+    except XMLSyntaxError:
+        return False
+    return True
     

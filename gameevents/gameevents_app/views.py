@@ -10,12 +10,8 @@ from flask.json import dumps
 from flask.ext.api import status 
 #from flask.helpers import make_response
 import simplejson
-
-#Exceptions and errors
-from flask.ext.api.exceptions import AuthenticationFailed, ParseError
 import json
-from simplejson.decoder import JSONDecodeError
-from gameevents_app.errors import *
+
 
 #Python modules
 #import datetime
@@ -27,10 +23,15 @@ from gameevents_app import controller
 
 #Extensions
 from .extensions import LOG
+
+#Exceptions and errors
+from flask.ext.api.exceptions import AuthenticationFailed, ParseError
 from sqlalchemy.orm.exc import NoResultFound
 from flask_api.exceptions import NotAcceptable
 from sys import exc_info
 from werkzeug.exceptions import BadRequest
+from simplejson.scanner import JSONDecodeError
+from gameevents_app.errors import *
 
 #Gamevents blueprint
 gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0')
@@ -190,8 +191,6 @@ def commit_event(sessionid):
     The authentication token must be passed as a X-AUTH-TOKEN header.
     The user must be authorized to read/write the session.
     """
-    
-    
  
     try:
         json_results = request.json
@@ -205,12 +204,21 @@ def commit_event(sessionid):
         required_fields = ["events", "timestamp"] 
         if (not json_results) or (not set(required_fields).issubset(json_results)):
             return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
-        else:            
-            success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], simplejson.dumps(json_results['events'])) 
-            if success:
-                return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
+        else:
+            #Check if events is valid json or xml
+            #events = json_results["events"]
+            is_json = controller.is_json(json_results["events"])
+            is_xml = controller.is_xml(json_results["events"])
+            
+            if ( is_xml or (not is_json)):
+                return jsonify({'message': 'Please format your gameevent as json.'}), status.HTTP_400_BAD_REQUEST
             else:
-                return jsonify({'message': "Could not record game event."}), status.HTTP_500_INTERNAL_SERVER_ERROR
+                #Record the event 
+                success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], json_results["events"])
+                if success:
+                    return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
+                else:
+                    return jsonify({'message': "Could not record game event."}), status.HTTP_500_INTERNAL_SERVER_ERROR
     except JSONDecodeError as e:
         return jsonify({'message': 'Invalid request, not valid JSON. Please try again.'}), status.HTTP_400_BAD_REQUEST
     except AuthenticationFailed as e:
@@ -222,7 +230,8 @@ def commit_event(sessionid):
     except Exception as e:
         LOG.error("Undefined exception when trying to record a game event.")
         LOG.error(e.args, exc_info=True)
-        abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        #abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return jsonify({'message': 'Internal error. Please try again.'}), status.HTTP_500_INTERNAL_SERVER_ERROR
     
             
 @gameevents.route('/sessions/<sessionid>/events')
