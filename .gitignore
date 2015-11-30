@@ -51,7 +51,23 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/_build/
+**/docs/_build/
+**/documentation/_build/
 
 # PyBuilder
 target/
+
+#SQLite dbs
+*.db
+
+#DB Migrations
+db_repository/
+
+#TMP folder
+tmp/
+
+#Config file
+**/config.py
+
+#Eclipse Pydev project
+.pydevproject
