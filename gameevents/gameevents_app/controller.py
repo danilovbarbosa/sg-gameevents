@@ -4,20 +4,21 @@ of the application when called by the views.
 '''
 
 #from flask import current_app
+from uuid import UUID
 
 # Exceptions and errors
 from flask.ext.api.exceptions import AuthenticationFailed, ParseError
-from lxml.etree import XMLSyntaxError
+#from lxml.etree import XMLSyntaxError
 from simplejson.scanner import JSONDecodeError
 
 from sqlalchemy.orm.exc import NoResultFound 
-from gameevents_app.errors import *
+from gameevents_app.errors import *  # @UnusedWildImport
 #from itsdangerous import BadSignature, SignatureExpired
 #from werkzeug.exceptions import Unauthorized
 #from flask_api.exceptions import NotFound
 
 import simplejson
-from lxml import etree, objectify
+#from lxml import etree, objectify
 
 # Models
 from gameevents_app.models.session import Session
@@ -26,7 +27,7 @@ from gameevents_app.models.gameevent import GameEvent
 
 #Extensions
 from .extensions import db, LOG
-from flask_api.exceptions import NotAuthenticated, NotAcceptable
+from flask_api.exceptions import NotAcceptable, NotFound
 
 
 
@@ -83,7 +84,13 @@ def new_session(sessionid, client_id):
 def is_session_authorized(sessionid):
     """TODO: Implement this function to check using timestamp and/or 
     with user profile service if the pair is valid."""
-    return True
+    if (is_uuid_valid(sessionid)):
+        if (sessionid == "ac52bb1d811356ab3a8e8711c5f7ac5d"):
+            return False
+        else:
+            return True
+    else:
+        return False
     
 
 ###################################################
@@ -91,7 +98,8 @@ def is_session_authorized(sessionid):
 ###################################################
 
 def record_gameevent(sessionid, token, timestamp, events):
-    """Checks if the token is valid and records the game event in the database."""
+    """Checks if the token is valid and records the game event(s) in the database.
+    Returns the count of inserted items."""
 
     client = Client.verify_auth_token(token)
     
@@ -104,58 +112,37 @@ def record_gameevent(sessionid, token, timestamp, events):
         try:
             res_sessionid = query_sessionid.one()
         except NoResultFound:
-            # SessionID is not in the db. Ask the userprofile service and if authorized, 
-            # add it in the local db with a timestamp to be able to expire it.
+            # SessionID is not in the db.
+            raise NotFound("This sessionid is not in the database. Did you request a token first?")
             
-            
-            try:
-                #fetch client object
-                client_obj = get_client(client["clientid"])
-                if (is_session_authorized(sessionid)):
-                    res_session = new_session(sessionid, client_obj.id)
-                    res_sessionid = res_session.id
-                else:
-                    raise SessionNotAuthorizedException("You are not authorized to use this sessionid.")
-            except NoResultFound:
-                raise NotAuthenticated("This clientid is not valid.")
-                #This is strange, and should not happen that a token has a valid clientid for a client not in db
-            
-            
-        serialized_events = False
+        #serialized_events = False
         decoded_events = False
-        
-        
+        count_new_records = 0
         if (res_sessionid):
             #TODO: Validate the game event against XML schema or JSON-LD context?
-            LOG.debug(type(events))          
-            
-            
             try:
                 decoded_events = simplejson.loads(events)
-                LOG.debug("found json")
-                LOG.debug(decoded_events)
-                serialized_events = simplejson.dumps(decoded_events)
+                #serialized_events = simplejson.dumps(decoded_events)
             except JSONDecodeError:
-                LOG.debug("not json")
+                #LOG.debug("not json")
+                pass           
             
-            
-            
-            if serialized_events:
-                
-                for serialized_event in serialized_events:          
-                    new_gameevent = GameEvent(sessionid, serialized_event)
+            if decoded_events:
+                for decoded_event in decoded_events:
+                    new_gameevent = GameEvent(sessionid, simplejson.dumps(decoded_event))
                     db.session.add(new_gameevent)
                     try:
                         db.session.commit()
-                        return True
+                        count_new_records = count_new_records + 1
                     except Exception as e:
                         LOG.warning(e)
                         db.session.rollback()
                         db.session.flush() # for resetting non-commited .add()
                         LOG.error(e, exc_info=True)
-                        raise e                
+                        raise e
+            return count_new_records        
     else:
-        raise AuthenticationFailed('Unauthorized token.') 
+        raise AuthenticationFailed('Unauthorized token. You need a client token to edit gaming sessions.') 
 
     
 def get_gameevents(token, sessionid):
@@ -187,16 +174,38 @@ def get_client(clientid):
 #    Authentication functions
 ###################################################
 
-def client_authenticate(clientid, apikey):
+def client_authenticate(clientid, apikey, sessionid):
     """Tries to authenticate a client by checking a clientid/apikey pair."""
+    client = False
+    session = False
+
+    # First, try to see if clientid/apikey is valid
     try:
         client = db.session.query(Client).filter_by(clientid = clientid).one()
         if (not client.verify_apikey(apikey)):
             raise AuthenticationFailed("Wrong credentials.")
-        else:
-            return client
     except NoResultFound:
         raise AuthenticationFailed("Clientid does not exist.")
+        
+    #Is this an admin trying to authenticate without sessionid?
+    if (client.is_admin()):
+        token = client.generate_auth_token()
+    else:
+        #Check if sessionid is already in db. If not, ask the UP service
+        try:
+            session = Session.query.filter_by(id=sessionid, client_id=client.id).one()  # @UndefinedVariable
+        except NoResultFound:
+            if (is_session_authorized(sessionid)):
+                session = new_session(sessionid, client.id)
+
+        if (session):
+            token = client.generate_auth_token(session.id)
+        else:
+            raise AuthenticationFailed("Could not verify session.")
+    
+    return token
+        
+    
 
 def token_authenticate(token):
     """Tries to authenticate a client checking the token."""
@@ -212,18 +221,39 @@ def token_authenticate(token):
             return client
         else:
             raise AuthenticationFailed("Clientid does not exist.")
+        
+
+        
+###################################################
+#    Helper functions
+###################################################
+
 
 def is_json(string):
     try:
-        json_object = simplejson.loads(string)
+        json_object = simplejson.loads(string)  # @UnusedVariable
     except ValueError:
         return False
     return True
 
-def is_xml(string):
-    try:
-        result = objectify.fromstring(string)
-    except XMLSyntaxError:
-        return False
-    return True
+# def is_xml(string):
+#     try:
+#         result = objectify.fromstring(string)
+#     except XMLSyntaxError:
+#         return False
+#     return True
     
+def is_uuid_valid(sessionid):
+    """
+    Validate that a UUID string is in
+    fact a valid uuid.
+    """    
+
+    try:
+        val = UUID(sessionid)
+    except (ValueError, AttributeError):
+        # If it's a value error, then the string 
+        # is not a valid hex code for a UUID.
+        return False
+
+    return val.hex == sessionid

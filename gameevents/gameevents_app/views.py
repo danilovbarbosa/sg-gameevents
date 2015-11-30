@@ -25,13 +25,13 @@ from gameevents_app import controller
 from .extensions import LOG
 
 #Exceptions and errors
-from flask.ext.api.exceptions import AuthenticationFailed, ParseError
+from flask.ext.api.exceptions import AuthenticationFailed, ParseError, NotAuthenticated
 from sqlalchemy.orm.exc import NoResultFound
-from flask_api.exceptions import NotAcceptable
-from sys import exc_info
-from werkzeug.exceptions import BadRequest
+from flask_api.exceptions import NotAcceptable, NotFound
+#from sys import exc_info
+#from werkzeug.exceptions import BadRequest
 from simplejson.scanner import JSONDecodeError
-from gameevents_app.errors import *
+from gameevents_app.errors import * # @UnusedWildImport
 
 #Gamevents blueprint
 gameevents = Blueprint('gameevents', __name__, url_prefix='/gameevents/api/v1.0')
@@ -72,18 +72,18 @@ def get_token():
         apikey = request.json['apikey']
         
         try:
-            sessionid = request.json['sessionid']
+            sessionid = request.json['sessionid']            
         except KeyError:
             sessionid = False
-            
-        #LOG.debug(request.get_data().decode())
-            
       
+        if ( sessionid and ( not controller.is_uuid_valid(sessionid) ) ):
+            return jsonify({'message': 'Invalid sessionid'}), status.HTTP_400_BAD_REQUEST
+            
         try:
-            client = controller.client_authenticate(clientid, apikey)
-            token = client.generate_auth_token(sessionid)
-            return jsonify({ 'token': token.decode('ascii') })
-        except AuthenticationFailed as e:
+            token = controller.client_authenticate(clientid, apikey, sessionid)
+            #token = client.generate_auth_token(sessionid)
+            return jsonify({ 'token': token.decode('ascii') }), status.HTTP_200_OK
+        except (AuthenticationFailed, NotAuthenticated) as e:
             return jsonify({'message': 'Could not authenticate. Please check your credentials and try again.'}), status.HTTP_401_UNAUTHORIZED 
         except TokenExpiredException as e:
             return jsonify({'message': 'Your token expired. Please generate another one.'}), status.HTTP_401_UNAUTHORIZED
@@ -192,46 +192,48 @@ def commit_event(sessionid):
     The user must be authorized to read/write the session.
     """
  
+    json_results = False
     try:
         json_results = request.json
-
-        auth_token = request.headers.get('X-AUTH-TOKEN', None)
-    
-        if not auth_token:
-            return jsonify({'errors':[{'userMessage':"Missing header ['X-AUTH-TOKEN']."}]}), status.HTTP_400_BAD_REQUEST         
-    
-        #Check if request is json and contains all the required fields
-        required_fields = ["events", "timestamp"] 
-        if (not json_results) or (not set(required_fields).issubset(json_results)):
-            return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
-        else:
-            #Check if events is valid json or xml
-            #events = json_results["events"]
-            is_json = controller.is_json(json_results["events"])
-            is_xml = controller.is_xml(json_results["events"])
-            
-            if ( is_xml or (not is_json)):
-                return jsonify({'message': 'Please format your gameevent as json.'}), status.HTTP_400_BAD_REQUEST
-            else:
-                #Record the event 
-                success = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], json_results["events"])
-                if success:
-                    return jsonify({'message': "Game event recorded successfully."}), status.HTTP_201_CREATED
-                else:
-                    return jsonify({'message': "Could not record game event."}), status.HTTP_500_INTERNAL_SERVER_ERROR
     except JSONDecodeError as e:
         return jsonify({'message': 'Invalid request, not valid JSON. Please try again.'}), status.HTTP_400_BAD_REQUEST
-    except AuthenticationFailed as e:
-        LOG.warning("Authentication failure when trying to record game event.")   
-        return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED    
-    except NotAcceptable as e:
-        LOG.warning(e.args)   
-        return jsonify({'message': e.args}), status.HTTP_400_BAD_REQUEST  
-    except Exception as e:
-        LOG.error("Undefined exception when trying to record a game event.")
-        LOG.error(e.args, exc_info=True)
-        #abort(status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return jsonify({'message': 'Internal error. Please try again.'}), status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    
+    auth_token = request.headers.get('X-AUTH-TOKEN', None)
+
+    if not auth_token:
+        return jsonify({'errors':[{'userMessage':"Missing header ['X-AUTH-TOKEN']."}]}), status.HTTP_400_BAD_REQUEST         
+
+    #Check if request is json and contains all the required fields
+    required_fields = ["events", "timestamp"] 
+    if (not json_results) or (not set(required_fields).issubset(json_results)):
+        return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
+    else:
+        #Check if events is valid json or xml
+        is_json = controller.is_json(json_results["events"])
+        
+        if (not is_json):
+            return jsonify({'message': 'Please format your gameevent as json.'}), status.HTTP_400_BAD_REQUEST
+        
+        if (not controller.is_uuid_valid(sessionid)):
+            return jsonify({'message': 'Invalid sessionid'}), status.HTTP_400_BAD_REQUEST
+            
+        try:
+            #Record the event         
+            count = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], json_results["events"])
+            return jsonify({'message': "Created %s new item(s)." % count}), status.HTTP_201_CREATED    
+        except AuthenticationFailed as e:
+            #LOG.warning("Authentication failure when trying to record game event.")   
+            return jsonify({'message': e.args}), status.HTTP_401_UNAUTHORIZED
+        except (NotFound) as e:
+            return jsonify({'message': 'SessionID not in the database. Did you ask for a token first?'}), status.HTTP_404_NOT_FOUND
+        except NotAcceptable as e:
+            LOG.warning(e.args)   
+            return jsonify({'message': e.args}), status.HTTP_400_BAD_REQUEST  
+        except Exception as e:
+            LOG.error("Undefined exception when trying to record a game event.")
+            LOG.error(e.args, exc_info=True)
+            return jsonify({'message': 'Internal error. Please try again.'}), status.HTTP_500_INTERNAL_SERVER_ERROR
     
             
 @gameevents.route('/sessions/<sessionid>/events')
