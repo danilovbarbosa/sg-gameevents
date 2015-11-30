@@ -47,7 +47,7 @@ class Session(db.Model):
         obj_d = {
             'id': self.id,
             'client_id': self.client_id,
-            'timestamp':self.timestamp
+            'timestamp':str(self.timestamp)
         }
         return obj_d
     

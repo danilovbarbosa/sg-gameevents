@@ -28,6 +28,7 @@ from gameevents_app.models.gameevent import GameEvent
 #Extensions
 from .extensions import db, LOG
 from flask_api.exceptions import NotAcceptable, NotFound
+from werkzeug.exceptions import BadRequest
 
 
 
@@ -120,12 +121,16 @@ def record_gameevent(sessionid, token, timestamp, events):
         count_new_records = 0
         if (res_sessionid):
             #TODO: Validate the game event against XML schema or JSON-LD context?
-            try:
-                decoded_events = simplejson.loads(events)
+            if (isinstance(events, str)):            
+                try:
+                    decoded_events = simplejson.loads(events)
                 #serialized_events = simplejson.dumps(decoded_events)
-            except JSONDecodeError:
-                #LOG.debug("not json")
-                pass           
+                except JSONDecodeError:
+                    raise BadRequest
+            elif (isinstance(events, list)):
+                decoded_events = events
+            else:
+                raise BadRequest
             
             if decoded_events:
                 for decoded_event in decoded_events:
@@ -229,12 +234,20 @@ def token_authenticate(token):
 ###################################################
 
 
-def is_json(string):
-    try:
-        json_object = simplejson.loads(string)  # @UnusedVariable
-    except ValueError:
+def is_json(package):
+    if (isinstance(package, str)):
+        try:
+            json_object = simplejson.loads(package)  # @UnusedVariable
+            return True
+        except ValueError:
+            return False
+        
+    elif (isinstance(package, dict)):
+        return True
+    elif (isinstance(package, list)):
+        return True
+    else:
         return False
-    return True
 
 # def is_xml(string):
 #     try:

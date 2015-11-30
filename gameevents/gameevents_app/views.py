@@ -6,11 +6,11 @@ by the :mod:`controller`.
 
 #Flask and modules
 from flask import Blueprint, jsonify, request, abort, make_response
-from flask.json import dumps
+#from flask.json import dumps
 from flask.ext.api import status 
 #from flask.helpers import make_response
 import simplejson
-import json
+#import json
 
 
 #Python modules
@@ -163,9 +163,10 @@ def get_sessions():
             return jsonify({'errors':[{'userMessage':"You are not authorized to see all sessions."}]}), status.HTTP_401_UNAUTHORIZED
         else:
             sessions = controller.get_sessions()
+            #LOG.debug(sessions)
             num_results = len(sessions)
             results = [ session.as_dict() for session in sessions ]
-            response = make_response(dumps(results), status.HTTP_200_OK)
+            response = make_response(simplejson.dumps(results), status.HTTP_200_OK)
             response.headers["X-Total-Count"] = num_results
             return response
         
@@ -192,9 +193,9 @@ def commit_event(sessionid):
     The user must be authorized to read/write the session.
     """
  
-    json_results = False
+    json_package = False
     try:
-        json_results = request.json
+        json_package = request.json
     except JSONDecodeError as e:
         return jsonify({'message': 'Invalid request, not valid JSON. Please try again.'}), status.HTTP_400_BAD_REQUEST
 
@@ -206,11 +207,14 @@ def commit_event(sessionid):
 
     #Check if request is json and contains all the required fields
     required_fields = ["events", "timestamp"] 
-    if (not json_results) or (not set(required_fields).issubset(json_results)):
+    if (not json_package) or (not set(required_fields).issubset(json_package)):
         return jsonify({'message': 'Invalid request. Please try again.'}), status.HTTP_400_BAD_REQUEST    
     else:
         #Check if events is valid json or xml
-        is_json = controller.is_json(json_results["events"])
+#         LOG.debug(type(json_package))
+#         LOG.debug(json_package)
+#         LOG.debug(json_package["events"])
+        is_json = controller.is_json(json_package["events"])
         
         if (not is_json):
             return jsonify({'message': 'Please format your gameevent as json.'}), status.HTTP_400_BAD_REQUEST
@@ -220,7 +224,7 @@ def commit_event(sessionid):
             
         try:
             #Record the event         
-            count = controller.record_gameevent(sessionid, auth_token, json_results['timestamp'], json_results["events"])
+            count = controller.record_gameevent(sessionid, auth_token, json_package['timestamp'], json_package["events"])
             return jsonify({'message': "Created %s new item(s)." % count}), status.HTTP_201_CREATED    
         except AuthenticationFailed as e:
             #LOG.warning("Authentication failure when trying to record game event.")   
@@ -253,9 +257,10 @@ def get_events(sessionid):
             gameevents = controller.get_gameevents(auth_token, sessionid)
             num_results = len(gameevents)
             #LOG.debug("number of results: %s" % num_results)
-            results = [ gameevent.as_dict() for gameevent in gameevents ]
+            #results = [ gameevent.as_dict() for gameevent in gameevents ]
+            results = simplejson.dumps([ gameevent.as_dict() for gameevent in gameevents ])
             #LOG.debug(results)
-            response = make_response(dumps(results), status.HTTP_200_OK)
+            response = make_response(results, status.HTTP_200_OK)
             response.headers["X-Total-Count"] = num_results
             return response
         else:
