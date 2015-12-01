@@ -1,11 +1,11 @@
 '''
-Defines the methods/endpoints (the views) of the gameevents service.
+Defines the methods/endpoints of the gameevents service.
 This defines the interaction points, but the actual logic is treated
-by the :mod:`controller`.
+by the :mod:`gameevents_app.controller`.
 '''
 
 #Flask and modules
-from flask import Blueprint, jsonify, request, abort, make_response
+from flask import Blueprint, jsonify, request, abort, make_response, current_app
 #from flask.json import dumps
 from flask.ext.api import status 
 #from flask.helpers import make_response
@@ -46,6 +46,9 @@ admin = Blueprint('admin', __name__, url_prefix='/gameevents/api/v1.0/admin')
 
 @gameevents.route('/version')
 def get_version():
+    '''
+    
+    '''
     return jsonify({'data': [{'version':'v1.0'}] }), status.HTTP_200_OK
 
 
@@ -242,10 +245,49 @@ def commit_event(sessionid):
             
 @gameevents.route('/sessions/<sessionid>/events')
 def get_events(sessionid):
-    """Lists all game events associated to a gaming session.
+    '''
+    Lists all game events associated to a gaming session.
     The authentication token must be passed as a X-AUTH-TOKEN header.
     The user must be authorized to read the session.
-    """
+    
+    :param sessionid: The desired sessionid
+    :type sessionid: uuid (string)
+    :reqheader X-AUTH-TOKEN: A valid token
+    :status 200: Successful request, returns the events
+    :responseheader: Content-type: application/json
+    :responseheader: X-Total-Count: the total number of results 
+    
+    **Example request**:
+        
+        .. sourcecode:: http
+        
+            GET sessions/2bdff61dfa6df36f2e72ef8b2f3da92f/events
+            X-AUTH-TOKEN:<yourtoken>
+        
+    **Example response**:
+        
+        .. sourcecode:: http        
+            
+            HTTP/1.0 200 OK
+            Content-Type: application/json
+            Content-Length: 227
+            X-Total-Count: 1
+            Server: Werkzeug/0.10.4 Python/3.4.3
+            Date: Tue, 01 Dec 2015 16:34:23 GMT
+            
+            [{
+                "session_id": "2bdff61dfa6df36f2e72ef8b2f3da92f",
+                "gameevent": {
+                    "action": "STARTGAME",
+                    "level": "",
+                    "result": [],
+                    "which_lix": "",
+                    "update": "",
+                    "timestamp": "2015-12-01T16:33:26Z"
+                },
+                "id": "de2f06d139d0c940f7dde8d5ec3db4f5"
+            }]
+    '''
     
     auth_token = request.headers.get('X-AUTH-TOKEN', None)
     if not auth_token:
@@ -262,6 +304,7 @@ def get_events(sessionid):
             #LOG.debug(results)
             response = make_response(results, status.HTTP_200_OK)
             response.headers["X-Total-Count"] = num_results
+            response.headers["Content-Type"] = "application/json"
             return response
         else:
             return jsonify({'message': "Not authorized to see events for this session."}), status.HTTP_401_UNAUTHORIZED
@@ -274,5 +317,19 @@ def get_events(sessionid):
         LOG.error(e, exc_info=True)
         abort(status.HTTP_500_INTERNAL_SERVER_ERROR) 
 
+######################################################
+# Game events
+######################################################
 
+@gameevents.route('/help', methods = ['GET'])
+def apihelp():
+    '''
+    Print available functions.
+    '''
+    func_list = {}
+    for rule in current_app.url_map.iter_rules():
+        if rule.endpoint != 'static':
+            func_list[rule.rule] = current_app.view_functions[rule.endpoint].__doc__
+        #print(func_list)
+    return jsonify(func_list)
     

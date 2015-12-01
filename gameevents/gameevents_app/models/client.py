@@ -1,8 +1,4 @@
-'''
-Created on 10 Nov 2015
-
-@author: mbrandaoca
-'''
+''''''
 from uuid import UUID
 import OpenSSL
 from passlib.apps import custom_app_context as pwd_context
@@ -19,22 +15,33 @@ from config import DEFAULT_TOKEN_DURATION
 
 
 class Client(db.Model):
-    """Model "clients" table in the database. 
-    It contains id, a clientid, and hashed apikey. Each game/application
-    using the service (i.e. a client) must have an entry in this table to be able
-    to request an authentication token.    
-    """
+    '''
+    Model "clients" table in the database. Each game/application 
+    using the service (i.e. a client) must have an entry in this 
+    table to be able to request an authentication token.
+    Initialization generates the internal ID and stores apikey hashed.
     
-    __tablename__ = "client"    
+    :param str clientid: human readable identifier of the client application
+    :param str apikey: desired apikey
+    :param str role: admin/normal
+    
+    '''
+    
+    __tablename__ = "client"  
+    #: (uuid) internal ID of the client  
     id = db.Column(db.String(36), primary_key=True) # Referenced in Sessionid
+    #: human readable identifier of the client application
     clientid = db.Column(db.String(255), unique=True)
+    #: (str) hashed apikey
     apikey_hash = db.Column(db.String(255))
+    #: (str) admin/normal
     role = db.Column(db.String(6))
+    #: (relationship) back reference to list the sessions connected to this client
     sessions = db.relationship("Session", backref="client")
 
 
     def __init__(self, clientid, apikey, role):
-        """Initialize client class with the data provided, and encrypting password."""
+        ''''''
         self.id = UUID(bytes = OpenSSL.rand.bytes(16)).hex
         self.clientid = clientid
         self.apikey_hash = pwd_context.encrypt(apikey)
@@ -42,7 +49,11 @@ class Client(db.Model):
         #self.token = None
         
     def as_dict(self):
-        """Returns a representation of the object as dictionary."""
+        '''
+        Represents client as dictionary.  
+              
+        :rtype: dict
+        '''
         obj_d = {
             'id': self.id,
             'clientid': self.clientid,
@@ -51,22 +62,38 @@ class Client(db.Model):
         return obj_d
     
     def is_session_authorized(self, sessionid):
-        """Checks if the client is authorized to access this sessionid. Returns boolean."""
-        #Check if this client can read/write this sessionid
+        '''
+        Checks if the client is authorized to access this sessionid.
+        
+        TODO: Check authorized sessions in UserProfile service. 
+        
+        :param sessionid: Sessionid to be checked        
+        :rtype: boolean
+        
+        '''
         if (sessionid != "zzzz" and sessionid != False or self.is_admin()): 
             return True
         else:
             return False
         
     def is_admin(self):
-        """Checks if the client is an admin. Returns boolean."""
+        '''
+        Checks if the client is admin.
+        
+        :rtype: boolean
+        '''
         if (self.role == "admin"):
             return True
         else: 
             return False
 
     def verify_apikey(self, apikey):
-        """Checks if the client's apikey is valid. Returns boolean."""
+        '''
+        Checks if the provided apikey matches the client's stored apikey hashed.
+        
+        :param apikey: Apikey to be verified against the client's
+        :rtype: boolean
+        '''
         #LOG.debug("Checking apikey... clientid %s, apikey %s" % (self.clientid, apikey))
         verified = pwd_context.verify(apikey, self.apikey_hash)
         if verified:
@@ -78,7 +105,13 @@ class Client(db.Model):
         
     @staticmethod
     def verify_auth_token(token):
-        """Receives a token and returns the data in the token (id, clientid, sessionid) as dictionary."""
+        '''
+        Receives a token and returns the data stored in the token (id, clientid, sessionid). 
+                
+        :param token: The token to be verified
+        :rtype: dict
+        :raise: :exc:`AuthenticationFailed` when the token is invalid or has expired. 
+        '''
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = s.loads(token)
@@ -99,9 +132,13 @@ class Client(db.Model):
 
 
     def generate_auth_token(self, sessionid = False, expiration = DEFAULT_TOKEN_DURATION):
-        """Generates an authentication token with the id, clientid, and sessionid (if provided).
-            It is possible to provide a custom expiration time in seconds.
-        """ 
+        '''
+        Generates an authentication token, which contains client data and the sessionid.
+        A token with no associated sessionid is only allowed to admins.
+        
+        :param sessionid: Optional sessionid to be included in the token
+        :param expiration: Optional custom expiration time for token, in seconds
+        ''' 
         if (not sessionid):
             if self.is_admin():       
                 s = Serializer(current_app.config['SECRET_KEY'], expires_in = expiration)

@@ -11,39 +11,64 @@ Welcome to gameevents's documentation!
 Components
 **********
 
-===
-App
-===
+==============
+Gameevents App
+==============
 
-.. automodule:: app
+.. automodule:: gameevents_app
    :members:
 
 ========
-Apiviews
+REST API
 ========
    
-.. automodule:: app.apiviews
+.. autoflask:: gameevents_app:create_app(testing=False)
+   :undoc-static:
+   
+=====
+Views
+=====
+   
+.. automodule:: gameevents_app.views
    :members:
 
 ==========
 Controller
 ==========
    
-.. automodule:: app.controller
+.. automodule:: gameevents_app.controller
    :members:
 
 ======
 Models
 ======
+
+Client
+------
    
-.. automodule:: app.models
+.. automodule:: gameevents_app.models.client
+   :members:
+
+
+Sessions
+--------
+
+.. automodule:: gameevents_app.models.session
+   :members:
+
+
+Game Events
+-----------
+
+.. automodule:: gameevents_app.models.gameevent
    :members:
    
+      
 ======
 Errors
 ======
    
-.. automodule:: app.errors
+.. automodule:: gameevents_app.errors
    :members:
 
 
