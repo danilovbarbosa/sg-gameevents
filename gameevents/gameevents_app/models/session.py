@@ -1,10 +1,12 @@
 ''''''
 
 
-#from flask import current_app
+from flask import url_for
 from ..extensions import db
 
 import datetime
+
+
 
 #Logging
 # from logging import getLogger
@@ -28,6 +30,7 @@ class Session(db.Model):
     timestamp = db.Column(db.DateTime(True))
     #: relationship to gameevents under this session
     gameevents = db.relationship("GameEvent", backref="session")
+    _URLFor = "/session"
  
     #----------------------------------------------------------------------
     
@@ -54,3 +57,26 @@ class Session(db.Model):
         }
         return obj_d
     
+    def as_hateoas(self):
+        '''
+        Returns dict representation of the session that follows hateoas representation.        
+        '''
+       
+        _links = []
+        _self = {
+            "rel" : "self",
+            "href" : url_for("gameevents.get_session", sessionid=self.id)
+        }
+        _client = {
+            "rel" : "client",
+            "href" : url_for("gameevents.get_client", clientid= self.client_id)
+        }
+        _links.append(_self)
+        _links.append(_client)
+        obj_d = {
+            'id': self.id,
+            #'client_id': self.client_id,
+            'created':str(self.timestamp),
+            '_links':_links
+        }
+        return obj_d

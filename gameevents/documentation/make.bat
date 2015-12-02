@@ -73,6 +73,9 @@ if errorlevel 9009 (
 
 
 if "%1" == "html" (
+	echo "Cleaning first..."
+	for /d %%i in (%BUILDDIR%\*) do rmdir /q /s %%i
+	del /q /s %BUILDDIR%\*
     echo "Running command: %SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html"
 	%SPHINXBUILD% -b html %ALLSPHINXOPTS% %BUILDDIR%/html
 	if errorlevel 1 exit /b 1

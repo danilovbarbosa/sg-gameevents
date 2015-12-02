@@ -6,7 +6,7 @@ from passlib.apps import custom_app_context as pwd_context
 from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired)
 from flask.ext.api.exceptions import AuthenticationFailed
 
-from flask import current_app
+from flask import current_app, url_for
 from ..extensions import db, LOG
 
 from config import DEFAULT_TOKEN_DURATION
@@ -58,6 +58,25 @@ class Client(db.Model):
             'id': self.id,
             'clientid': self.clientid,
             'role': self.role,
+        }
+        return obj_d
+    
+    def as_hateoas(self):
+        '''
+        Returns dict representation of the session that follows hateoas representation.
+        '''
+       
+        _links = []
+        _self = {
+            "rel" : "self",
+            "href" : url_for("gameevents.get_client", clientid= self.id)
+        }
+        _links.append(_self)
+        obj_d = {
+            'id': self.id,
+            'role': self.role,
+            'clientid': self.clientid,
+            '_links':_links
         }
         return obj_d
     

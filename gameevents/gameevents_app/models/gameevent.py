@@ -4,6 +4,8 @@ from uuid import UUID
 import OpenSSL
 import simplejson
 
+from flask import url_for
+
 from ..extensions import db
 
     
@@ -62,4 +64,32 @@ class GameEvent(db.Model):
             'gameevent': event_dict
         }
         return obj_d
+        
+    def as_hateoas(self):
+        '''
+        Returns dict representation of the game event that follows hateoas representation.
+        
+        :rtype: dict
+        '''
+       
+        event_dict = simplejson.loads(self.gameevent)
+       
+        _links = []
+        _self = {
+            "rel" : "self",
+            "href" : url_for("gameevents.get_event", sessionid= self.session_id, eventid=self.id)
+        }
+        _session = {
+            "rel" : "session",
+            "href" : url_for("gameevents.get_session", sessionid= self.session_id)
+        }
+        _links.append(_self)
+        _links.append(_session)
+        obj_d = {
+            'id': self.id,
+            'gameevent': event_dict,
+            '_links':_links
+        }
+        return obj_d
+    
     

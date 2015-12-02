@@ -3,9 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to gameevents's documentation!
-######################################
+Game Events's service documentation
+###################################
 
+
+********
+REST API
+********
+ 
+.. autoflask:: gameevents_app:create_app(testing=False)
+   :undoc-static:   
 
 **********
 Components
@@ -17,21 +24,7 @@ Gameevents App
 
 .. automodule:: gameevents_app
    :members:
-
-========
-REST API
-========
    
-.. autoflask:: gameevents_app:create_app(testing=False)
-   :undoc-static:
-   
-=====
-Views
-=====
-   
-.. automodule:: gameevents_app.views
-   :members:
-
 ==========
 Controller
 ==========

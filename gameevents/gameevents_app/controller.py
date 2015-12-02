@@ -83,6 +83,7 @@ def get_sessions():
     query = db.session.query(Session)
     res_sessions = query.all()
     return res_sessions
+
     
 def new_session(sessionid, client_id):
     '''
@@ -128,13 +129,12 @@ def is_session_authorized(sessionid, client_id = False):
 #    Game events functions
 ###################################################
 
-def record_gameevent(sessionid, token, timestamp, events):
+def record_gameevent(sessionid, token, events):
     '''
     Checks if the token is valid and records the game event(s) in the database.
     
     :param sessionid: Sessionid to which the gameevent is related
     :param token: the token used to authenticate the request
-    :param timestamp: timestamp of the request (as informed by the requester)
     :param events: JSON representation of the event
     :returns: Number of events inserted successfully in the database.
     :rtype: int
@@ -170,10 +170,12 @@ def record_gameevent(sessionid, token, timestamp, events):
             else:
                 raise BadRequest
             
+            results = []
             if decoded_events:
                 for decoded_event in decoded_events:
                     new_gameevent = GameEvent(sessionid, simplejson.dumps(decoded_event))
                     db.session.add(new_gameevent)
+                    results.append(new_gameevent)
                     try:
                         db.session.commit()
                         count_new_records = count_new_records + 1
@@ -183,7 +185,7 @@ def record_gameevent(sessionid, token, timestamp, events):
                         db.session.flush() # for resetting non-commited .add()
                         LOG.error(e, exc_info=True)
                         raise e
-            return count_new_records        
+            return results        
     else:
         raise AuthenticationFailed('Unauthorized token. You need a client token to edit gaming sessions.') 
 
@@ -203,6 +205,8 @@ def get_gameevents(token, sessionid):
         query_events = db.session.query(GameEvent).filter(GameEvent.session_id == sessionid)
         res_events = query_events.all()
         #LOG.debug("Found %s results." % len(res_events))
+        #Format response
+        
         return res_events
     else:
         #LOG.warning("User tried to use an invalid token.")
