@@ -1,6 +1,8 @@
 '''
 Controller of the application, which defines the behaviour
-of the application when called by the views.
+of the application when called by the views. The views should
+not call the models directly, but always pass the calls through
+the controller.
 '''
 
 #from flask import current_app
@@ -37,9 +39,18 @@ from werkzeug.exceptions import BadRequest
 ###################################################
 
 def new_client(clientid, apikey, role="normal"):
-    """ Adds a new client to the database.
+    '''
+    Adds new client to the database. A client is an application wishing to interact
+    with the gameevents service.
+    
     TODO: Protect this function so that only admins have access.
-    """
+    
+    :param clientid: human-readable name of the client 
+    :param apikey: apikey (password) to authenticate the client
+    :param role: optional role of the client (admin/normal). Normal clients are able to read/write 
+                 only one sessionid. Admin clients can read many sessions.
+    '''
+
     if role != "admin":
         role = "normal"
         
@@ -64,12 +75,24 @@ def new_client(clientid, apikey, role="normal"):
 ###################################################
 
 def get_sessions():
-    """"""
+    '''
+    Returns list of existing sessions in the gameevents database.
+    
+    :rtype: :py:class:`gameevents_app.models.session.Session`
+    '''
     query = db.session.query(Session)
     res_sessions = query.all()
     return res_sessions
+
     
 def new_session(sessionid, client_id):
+    '''
+    Creates a new session in the local database.
+    
+    :param sessionid: the desired sessionid, as informed by the client.
+    :param client_id: the internal client_id to be associated with the session.
+    :rtype: :py:class:`gameevents_app.models.session.Session`
+    '''
     session = Session(sessionid, client_id)
     try:
         db.session.add(session)
@@ -82,9 +105,17 @@ def new_session(sessionid, client_id):
         LOG.error(e, exc_info=True)
         raise e  
     
-def is_session_authorized(sessionid):
-    """TODO: Implement this function to check using timestamp and/or 
-    with user profile service if the pair is valid."""
+def is_session_authorized(sessionid, client_id = False):
+    '''
+    Checks if the client is authorized to interact with this sessionid.
+    
+    TODO: Implement this function to check using timestamp and/or 
+    with user profile service if the pair is valid.
+    
+    :param sessionid:
+    :param client_id:
+    '''
+
     if (is_uuid_valid(sessionid)):
         if (sessionid == "ac52bb1d811356ab3a8e8711c5f7ac5d"):
             return False
@@ -98,9 +129,16 @@ def is_session_authorized(sessionid):
 #    Game events functions
 ###################################################
 
-def record_gameevent(sessionid, token, timestamp, events):
-    """Checks if the token is valid and records the game event(s) in the database.
-    Returns the count of inserted items."""
+def record_gameevent(sessionid, token, events):
+    '''
+    Checks if the token is valid and records the game event(s) in the database.
+    
+    :param sessionid: Sessionid to which the gameevent is related
+    :param token: the token used to authenticate the request
+    :param events: JSON representation of the event
+    :returns: Number of events inserted successfully in the database.
+    :rtype: int
+    '''
 
     client = Client.verify_auth_token(token)
     
@@ -132,10 +170,12 @@ def record_gameevent(sessionid, token, timestamp, events):
             else:
                 raise BadRequest
             
+            results = []
             if decoded_events:
                 for decoded_event in decoded_events:
                     new_gameevent = GameEvent(sessionid, simplejson.dumps(decoded_event))
                     db.session.add(new_gameevent)
+                    results.append(new_gameevent)
                     try:
                         db.session.commit()
                         count_new_records = count_new_records + 1
@@ -145,19 +185,28 @@ def record_gameevent(sessionid, token, timestamp, events):
                         db.session.flush() # for resetting non-commited .add()
                         LOG.error(e, exc_info=True)
                         raise e
-            return count_new_records        
+            return results        
     else:
         raise AuthenticationFailed('Unauthorized token. You need a client token to edit gaming sessions.') 
 
     
 def get_gameevents(token, sessionid):
-    """Receives token and an optional sessionid to retrieve existing game events."""
+    '''
+    Retrieves existing game events related to a given sessionid. The sessionid is extracted
+    from the token. If the token is admin, then a sessionid needs to be informed to retrieve
+    the game events related to that sessionid.
+    
+    :param token: authentication token
+    :param sessionid: Optional parameter in case the token is an admin token.
+    '''
     #Is Client authorized to see this session id?
     client = token_authenticate(token)
     if client.is_session_authorized(sessionid):
         query_events = db.session.query(GameEvent).filter(GameEvent.session_id == sessionid)
         res_events = query_events.all()
         #LOG.debug("Found %s results." % len(res_events))
+        #Format response
+        
         return res_events
     else:
         #LOG.warning("User tried to use an invalid token.")
@@ -169,7 +218,12 @@ def get_gameevents(token, sessionid):
 ###################################################
 
 def get_client(clientid):
-    """Auxiliary function for the view, to retrieve a Client object from a clientid."""
+    '''
+    Auxiliary function for the view, to retrieve a Client object from a clientid.
+    
+    :param clientid: human-readable id of the client.
+    :rtype: :py:class:`gameevents_app.models.session.Client`
+    '''
     client = db.session.query(Client).filter_by(clientid = clientid).one()
     return client
     
@@ -180,7 +234,16 @@ def get_client(clientid):
 ###################################################
 
 def client_authenticate(clientid, apikey, sessionid):
-    """Tries to authenticate a client by checking a clientid/apikey pair."""
+    '''
+    Tries to authenticate a client by checking a clientid/apikey pair.
+    If successful, returns an authentication token.
+    
+    :param clientid:
+    :param apikey:
+    :param sessionid:
+    :rtype: str
+    :returns: Authentication token with default expiration time
+    '''
     client = False
     session = False
 
@@ -213,7 +276,15 @@ def client_authenticate(clientid, apikey, sessionid):
     
 
 def token_authenticate(token):
-    """Tries to authenticate a client checking the token."""
+    '''
+    Tries to authenticate a client checking the token.
+    
+    :param token: The token to be checked
+    :raises: `AuthenticationFailed` if client does not exist or if token is not valid/has expired.
+    :returns: the client that has been authenticated
+    :rtype: :py:class:`gameevents_app.models.session.Client`
+    '''
+    """"""
     try:
         token_client = Client.verify_auth_token(token)
         clientid_from_token = token_client["clientid"]
@@ -234,17 +305,24 @@ def token_authenticate(token):
 ###################################################
 
 
-def is_json(package):
-    if (isinstance(package, str)):
+def is_json(incoming):
+    '''
+    Checks if a given input is a list/dict or a string that could
+    be interpreted as valid JSON.
+    
+    :param incoming: The object to be checked
+    :rtype: boolean
+    '''
+    if (isinstance(incoming, str)):
         try:
-            json_object = simplejson.loads(package)  # @UnusedVariable
+            json_object = simplejson.loads(incoming)  # @UnusedVariable
             return True
         except ValueError:
             return False
         
-    elif (isinstance(package, dict)):
+    elif (isinstance(incoming, dict)):
         return True
-    elif (isinstance(package, list)):
+    elif (isinstance(incoming, list)):
         return True
     else:
         return False
@@ -256,17 +334,19 @@ def is_json(package):
 #         return False
 #     return True
     
-def is_uuid_valid(sessionid):
-    """
-    Validate that a UUID string is in
-    fact a valid uuid.
-    """    
+def is_uuid_valid(incoming):
+    '''
+    Validates that a UUID string is in fact a valid uuid.
+     
+    :param incoming: The string to be checked
+    :rtype: boolean
+    '''    
 
     try:
-        val = UUID(sessionid)
+        val = UUID(incoming)
     except (ValueError, AttributeError):
         # If it's a value error, then the string 
         # is not a valid hex code for a UUID.
         return False
 
-    return val.hex == sessionid
+    return val.hex == incoming

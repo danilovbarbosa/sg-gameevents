@@ -20,6 +20,7 @@ def create_app(testing=False):
 
     app = Flask(__name__)
     
+
     # Our application uses blueprints. Import and register the blueprint:
     from .views import gameevents, admin
     #from .views import auth_blueprint

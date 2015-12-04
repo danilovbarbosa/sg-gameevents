@@ -32,8 +32,6 @@ import OpenSSL
 
 
 class TestGameEvents(unittest.TestCase):
-    """TODO: Create some tests trying to add duplicate data
-    """
     @classmethod
     def setUpClass(self):
         
@@ -145,8 +143,9 @@ class TestGameEvents(unittest.TestCase):
     
     
     def test_token_existing_sessionid(self):
-        """Make a test request for a login with valid credentials and existing sessionid.
-        """
+        '''
+        Token request with valid credentials and existing sessionid.
+        '''
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey", sessionid = self.newsessionid))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -157,8 +156,10 @@ class TestGameEvents(unittest.TestCase):
     
 
     def test_token_nonexisting_but_valid_sessionid(self):
-        """Make a test request for a login with valid credentials and a valid - but still not in the db - sessionid.
-        """
+        '''
+        Token request with valid credentials and a valid - but still not in the db - sessionid.
+        '''
+        
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey",  sessionid = self.newsessionid3))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -169,8 +170,9 @@ class TestGameEvents(unittest.TestCase):
         
 
     def test_token_invalid_sessionid(self):
-        """Make a test request for a login with valid credentials but invalid sessionid.
-        """
+        '''
+        Token request with valid credentials but invalid sessionid.
+        '''
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey",  sessionid = "bablablabal"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -179,8 +181,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "400 BAD REQUEST")
         
     def test_token_unauthorized_sessionid(self):
-        """Make a test request for a login with valid credentials but invalid sessionid.
-        """
+        '''
+        Token request with valid credentials but invalid sessionid.
+        '''
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikey",  sessionid = self.unauthorized_sessionid))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -189,8 +192,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "401 UNAUTHORIZED")
         
     def test_get_admin_token(self):
-        """Make a test request for an admin login with valid credentials.
-        """
+        '''
+        Admin token request with valid credentials.
+        '''
         requestdata = json.dumps(dict(clientid="dashboard", apikey="dashboardapikey"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -199,20 +203,10 @@ class TestGameEvents(unittest.TestCase):
         # Assert response is 200 OK.                                           
         self.assertEquals(response.status, "200 OK")
     
-#     def test_get_admin_token_master(self):
-#         """Make a test request for a login with superuser (temporary!!!).
-#         """
-#         requestdata = json.dumps(dict(clientid="masteroftheuniverse", apikey="whatever"))
-#         response = self.client.post('/gameevents/api/v1.0/token', 
-#                                  data=requestdata, 
-#                                  content_type = 'application/json', 
-#                                  follow_redirects=True)
-#         # Assert response is 200 OK.                                           
-#         self.assertEquals(response.status, "401 UNAUTHORIZED")
-
     def test_token_badparams(self):
-        """Make a test request with invalid/missing parameters.
-        """
+        '''
+        Token request with missing parameters.
+        '''
         requestdata = json.dumps(dict(clientid="myclientid"))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -223,8 +217,9 @@ class TestGameEvents(unittest.TestCase):
         
 
     def test_token_invalid_apikey(self):
-        """Make a test request for a token with valid client id, invalid apikey and valid sessionid.
-        """
+        '''
+        Token request with invalid credentials and valid sessionid.
+        '''
         requestdata = json.dumps(dict(clientid="myclientidaaaaa", apikey="myapikeyaaaa", sessionid=self.newsessionid))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -235,8 +230,9 @@ class TestGameEvents(unittest.TestCase):
  
 
     def test_token_invalid_clientid(self):
-        """Make a test request for a login with invalid client id and valid sessionid.
-        """
+        '''
+        Token request with valid clientid but invalid apikey, and valid sessionid.
+        '''
         requestdata = json.dumps(dict(clientid="myclientid", apikey="myapikeyaaaa", sessionid=self.newsessionid))
         response = self.client.post('/gameevents/api/v1.0/token', 
                                  data=requestdata, 
@@ -247,6 +243,9 @@ class TestGameEvents(unittest.TestCase):
         
     
     def test_commit_xmlgameevent_validtoken(self):
+        '''
+        Game event commit request with valid token and invalid game event (in XML instead of JSON).
+        '''
         token = self.mytoken.decode()
         headers = {}
         sessionid = self.newsessionid
@@ -262,6 +261,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "400 BAD REQUEST")  
         
     def test_commit_gameevent_incompletejsonrequest(self):
+        '''
+        Game event commit request with valid token and invalid game event (invalid JSON).
+        '''
         token = self.mytoken.decode()
         headers = {}
         sessionid = self.newsessionid
@@ -275,6 +277,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "400 BAD REQUEST")  
         
     def test_commit_jsongameevent_validtoken(self):
+        '''
+        Game event commit request with valid token and valid game event.
+        '''
         token = self.mytoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -291,6 +296,9 @@ class TestGameEvents(unittest.TestCase):
         #self.assertFail()
         
     def test_commit_invalidjsongameevent_validtoken(self):
+        '''
+        Game event commit request with valid token and invalid game event (invalid JSON).
+        '''
         token = self.mytoken.decode()
         headers = {}
         sessionid = self.newsessionid
@@ -307,6 +315,9 @@ class TestGameEvents(unittest.TestCase):
             
         
     def test_commit_invalidxmlgameevent_validtoken(self):
+        '''
+        Game event commit request with valid token and invalid game event (in invalid XML).
+        '''
         token = self.mytoken.decode()
         headers = {}
         sessionid = self.newsessionid
@@ -323,6 +334,9 @@ class TestGameEvents(unittest.TestCase):
            
         
     def test_commit_multiplexmlgameevent_validtoken(self):
+        '''
+        Game event commit request with valid token and multiple game events (but in XML, not JSON).
+        '''
         token = self.mytoken.decode()
         headers = {}
         sessionid = self.newsessionid
@@ -339,6 +353,9 @@ class TestGameEvents(unittest.TestCase):
           
         
     def test_commit_multiplejsongameevent_validtoken(self):
+        '''
+        Game event commit request with valid token and multiple valid game events.
+        '''
         token = self.mytoken.decode()
         headers = {}
         sessionid = self.newsessionid
@@ -357,9 +374,9 @@ class TestGameEvents(unittest.TestCase):
         #self.assertFail()  
         
     def test_commit_gameevent_validtoken_newsessionid(self):
-        """A session not in the database, allowed in the UP service,
-        cannot be used to add a new event. The session needs to be in the database
-        when the client asks for a token!"""
+        '''
+        Game event commit request with valid token but for a session not in the database.
+        '''
         token = self.mytokennewsession.decode()
         sessionid = self.newsessionid3
         gameevent = self.json_valid_event
@@ -377,6 +394,9 @@ class TestGameEvents(unittest.TestCase):
     
 
     def test_commit_gameevent_expiredtoken(self):
+        '''
+        Game event commit request with expired token.
+        '''
         token = self.myexpiredtoken.decode()
         sessionid = self.newsessionid
         gameevent = self.json_valid_event
@@ -396,6 +416,9 @@ class TestGameEvents(unittest.TestCase):
     
     
     def test_commit_gameevent_badtoken(self):
+        '''
+        Game event commit request with bad token.
+        '''
         sessionid = self.newsessionid
         token = self.mybadtoken.decode()
         gameevent = self.json_valid_event
@@ -414,6 +437,9 @@ class TestGameEvents(unittest.TestCase):
       
      
     def test_getgameevents(self):
+        '''
+        List game events for a given session with valid token.
+        '''
         token = self.mytoken.decode()
         sessionid = self.newsessionid
         headers = {}
@@ -426,6 +452,9 @@ class TestGameEvents(unittest.TestCase):
      
       
     def test_getgameevents_badtoken(self):
+        '''
+        List game events for a given session with invalid token.
+        '''
         token = self.mybadtoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -438,6 +467,9 @@ class TestGameEvents(unittest.TestCase):
 
 
     def test_newclient_admintoken(self):
+        '''
+        Add a new client to database, using admin token, with good parameters.
+        '''
         token = self.myadmintoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -450,6 +482,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "201 CREATED")
         
     def test_newclient_bad_request_missing_params(self):
+        '''
+        Try to add a new client to database, without a token.
+        '''
         requestdata = json.dumps(dict(clientid="lix", apikey="lixapikey"))
         response = self.client.post('/gameevents/api/v1.0/admin/clients', 
                                  data=requestdata, 
@@ -459,6 +494,9 @@ class TestGameEvents(unittest.TestCase):
         
         
     def test_newexistingclient(self):
+        '''
+        Try to add client that already exists in database, using admin token, with good parameters.
+        '''
         token = self.myadmintoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -471,6 +509,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "409 CONFLICT")
         
     def test_newclient_nonadmintoken(self):
+        '''
+        Try to add a new client to database, with non-admin token.
+        '''
         token = self.mytoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -483,6 +524,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "401 UNAUTHORIZED")
         
     def test_newclient_expiredadmintoken(self):
+        '''
+        Try to add a new client to database, with expired admin token.
+        '''
         token = self.myexpiredadmintoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -495,6 +539,9 @@ class TestGameEvents(unittest.TestCase):
         self.assertEquals(response.status, "401 UNAUTHORIZED")
                 
     def test_newclient_badtoken(self):
+        '''
+        Try to add a new client to database, with bad token.
+        '''
         token = self.mybadtoken.decode()
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -508,6 +555,9 @@ class TestGameEvents(unittest.TestCase):
         
         
     def test_getsessions_validtoken(self):
+        '''
+        Get list of active sessions, with valid admin token.
+        '''
         token = self.myadmintoken.decode()   
         headers = {}
         headers['X-AUTH-TOKEN'] = token
@@ -521,12 +571,18 @@ class TestGameEvents(unittest.TestCase):
         #self.assertEquals(response.headers["X-Total-Count"], '3')
         
     def test_getsessions_notoken(self):
+        '''
+        Get list of active sessions, without a token.
+        '''
         response = self.client.get('/gameevents/api/v1.0/sessions', 
                                    follow_redirects=True)
         self.assertEquals(response.status, "400 BAD REQUEST")
         
         
     def test_getsessions_invalidtoken(self):
+        '''
+        Get list of active sessions, with expired admin token.
+        '''
         token = self.myexpiredadmintoken.decode()  
         headers = {}
         headers['X-AUTH-TOKEN'] = token
