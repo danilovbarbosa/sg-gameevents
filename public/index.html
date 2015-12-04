@@ -1,0 +1,958 @@
+
+
+<!doctype html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Game Events’s service documentation &mdash; gameevents 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/bizstyle.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/bizstyle.js"></script>
+    <link rel="top" title="gameevents 0.1 documentation" href="#" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <!--[if lt IE 9]>
+    <script type="text/javascript" src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">gameevents 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Game Events&#8217;s service documentation</a><ul>
+<li><a class="reference internal" href="#rest-api">REST API</a></li>
+<li><a class="reference internal" href="#components">Components</a><ul>
+<li><a class="reference internal" href="#module-gameevents_app">Gameevents App</a></li>
+<li><a class="reference internal" href="#module-gameevents_app.controller">Controller</a></li>
+<li><a class="reference internal" href="#models">Models</a><ul>
+<li><a class="reference internal" href="#module-gameevents_app.models.client">Client</a></li>
+<li><a class="reference internal" href="#module-gameevents_app.models.session">Sessions</a></li>
+<li><a class="reference internal" href="#module-gameevents_app.models.gameevent">Game Events</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-gameevents_app.errors">Errors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="game-events-s-service-documentation">
+<h1>Game Events&#8217;s service documentation<a class="headerlink" href="#game-events-s-service-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="rest-api">
+<h2>REST API<a class="headerlink" href="#rest-api" title="Permalink to this headline">¶</a></h2>
+<dl class="get">
+<dt id="get--v1-sessions">
+<code class="descname">GET </code><code class="descname">/v1/sessions</code><a class="headerlink" href="#get--v1-sessions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Admin only. Requests a list of all active sessions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><em>X-AUTH-TOKEN</em> &#8211; A valid admin token obtained from <code class="xref http http-get docutils literal"><span class="pre">GET</span> <span class="pre">/token</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; Successful request</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; Missing headers or parameters</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> &#8211; Token not authorized to read all sessions</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17">Content-Type</a> &#8211; application/json</li>
+<li><em>X-Total-Count</em> &#8211; Total number of results</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Array of Objects:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>id</strong> (<em>string</em>) &#8211; Sessionid</li>
+<li><strong>created</strong> (<em>string</em>) &#8211; Timestamp of when the session was added to the local db</li>
+<li><strong>_links</strong> (<em>string</em>) &#8211; Links to the resource and related entities (if any)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-version">
+<code class="descname">GET </code><code class="descname">/v1/version</code><a class="headerlink" href="#get--v1-version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current version of the API.</p>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--v1-clients">
+<code class="descname">POST </code><code class="descname">/v1/clients</code><a class="headerlink" href="#post--v1-clients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Admin only. Adds a new client.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><em>X-AUTH-TOKEN</em> &#8211; A valid admin token obtained from <code class="xref http http-get docutils literal"><span class="pre">GET</span> <span class="pre">/token</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request JSON Object:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>clientid</strong> (<em>string</em>) &#8211; human-readable id of the client to be created</li>
+<li><strong>api</strong> (<em>string</em>) &#8211; Plaintext version of the apikey</li>
+<li><strong>role</strong> (<em>string</em>) &#8211; Optional role (admin/normal). If not informed, a normal client will be created</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a> &#8211; Client created successfully</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; Not JSON object or missing parameters</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> &#8211; Token not authorized</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17">Content-Type</a> &#8211; application/json</li>
+<li><em>X-Total-Count</em> &#8211; the total number of results created</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Array of Objects:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>id</strong> (<em>string</em>) &#8211; Internal id of the created client</li>
+<li><strong>clientid</strong> (<em>string</em>) &#8211; Human-readable id of the client</li>
+<li><strong>role</strong> (<em>string</em>) &#8211; Role of the created client</li>
+<li><strong>_links</strong> (<em>string</em>) &#8211; Link to the resource and related entities (if any)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--v1-token">
+<code class="descname">POST </code><code class="descname">/v1/token</code><a class="headerlink" href="#post--v1-token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an authentication token to interact with the service. 
+A non-admin client needs to provide a valid sessionid to get a token. 
+An admin client can request a token without a valid &#8220;sessionid&#8221; 
+and will be given access to all running sessions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Request JSON Object:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>clientid</strong> (<em>string</em>) &#8211; human-readable id of the client</li>
+<li><strong>apikey</strong> (<em>string</em>) &#8211; client&#8217;s apikey</li>
+<li><strong>sessionid</strong> (<em>string</em>) &#8211; UUID of the session. Optional for admins</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; Successful request, returns the token</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; Not JSON object or missing parameters</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> &#8211; Wrong credentials</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--v1-sessions-(sessionid)-events">
+<code class="descname">POST </code><code class="descname">/v1/sessions/</code><span class="sig-paren">(</span><em>sessionid</em><span class="sig-paren">)</span><code class="descname">/events</code><a class="headerlink" href="#post--v1-sessions-(sessionid)-events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submits a new event related to the given sessionid. Client must be authorized
+to write to the session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sessionid</strong> (<em>string</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><em>X-AUTH-TOKEN</em> &#8211; A valid token obtained from <code class="xref http http-get docutils literal"><span class="pre">GET</span> <span class="pre">/token</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Request JSON Array of Objects:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>events</strong> (<em>string</em>) &#8211; list of JSON game events</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2">201 Created</a> &#8211; Event created successfully</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1">400 Bad Request</a> &#8211; Not JSON object or missing parameters</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> &#8211; Token not authorized to write to session</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> &#8211; Sessionid not found</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17">Content-Type</a> &#8211; application/json</li>
+<li><em>X-Total-Count</em> &#8211; the total number of results created</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response JSON Array of Objects:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>id</strong> (<em>string</em>) &#8211; Internal id of the created client</li>
+<li><strong>gameevent</strong> (<em>string</em>) &#8211; JSON representation of the event</li>
+<li><strong>_links</strong> (<em>string</em>) &#8211; Link to the resource and related entities (if any)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--v1-sessions-(sessionid)-events">
+<code class="descname">GET </code><code class="descname">/v1/sessions/</code><span class="sig-paren">(</span><em>sessionid</em><span class="sig-paren">)</span><code class="descname">/events</code><a class="headerlink" href="#get--v1-sessions-(sessionid)-events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists all game events associated to a gaming session. The user must be authorized to read the session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sessionid</strong> (<em>string</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Request Headers:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><em>X-AUTH-TOKEN</em> &#8211; A valid token obtained from <code class="xref http http-get docutils literal"><span class="pre">GET</span> <span class="pre">/token</span></code></li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Status Codes:</th><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1">200 OK</a> &#8211; Successful request, returns the events</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2">401 Unauthorized</a> &#8211; Token not authorized to read session</li>
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5">404 Not Found</a> &#8211; Sessionid not found</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Response Headers:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17">Content-Type</a> &#8211; application/json</li>
+<li><em>X-Total-Count</em> &#8211; the total number of results</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">Response JSON Array of Objects:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>link</strong> (<em>string</em>) &#8211; Link to the resource</li>
+<li><strong>gameevent</strong> (<em>string</em>) &#8211; JSON representation of the event</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example response</strong>:</p>
+<blockquote>
+<div><div class="highlight-http"><div class="highlight"><pre><span class="kr">HTTP</span><span class="o">/</span><span class="m">1.0</span> <span class="m">200</span> <span class="ne">OK</span>
+<span class="na">Content-Type</span><span class="o">:</span> <span class="l">application/json</span>
+<span class="na">Content-Length</span><span class="o">:</span> <span class="l">227</span>
+<span class="na">X-Total-Count</span><span class="o">:</span> <span class="l">1</span>
+<span class="na">Server</span><span class="o">:</span> <span class="l">Werkzeug/0.10.4 Python/3.4.3</span>
+<span class="na">Date</span><span class="o">:</span> <span class="l">Tue, 01 Dec 2015 16:34:23 GMT</span>
+
+<span class="p">[</span>
+  <span class="p">{</span>
+    <span class="nt">&quot;gameevent&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;which_lix&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;STARTGAME&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;timestamp&quot;</span><span class="p">:</span> <span class="s2">&quot;2015-11-29T12:10:57Z&quot;</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;f9a32e2f23b19d029b8faf0348a02de9&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;_links&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;rel&quot;</span><span class="p">:</span> <span class="s2">&quot;self&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;href&quot;</span><span class="p">:</span> <span class="s2">&quot;/v1/sessions/6042b89fcf45c4babd3e0f621713d199/events/f9a32e2f23b19d029b8faf0348a02de9&quot;</span>
+      <span class="p">},</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;rel&quot;</span><span class="p">:</span> <span class="s2">&quot;session&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;href&quot;</span><span class="p">:</span> <span class="s2">&quot;/v1/sessions/6042b89fcf45c4babd3e0f621713d199&quot;</span>
+      <span class="p">}</span>
+    <span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="components">
+<h2>Components<a class="headerlink" href="#components" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-gameevents_app">
+<span id="gameevents-app"></span><h3>Gameevents App<a class="headerlink" href="#module-gameevents_app" title="Permalink to this headline">¶</a></h3>
+<p>Main module for starting the gameevents service. Imports required 
+modules from Flask (including DB and auth modules, 
+and sets up logging.</p>
+</div>
+<div class="section" id="module-gameevents_app.controller">
+<span id="controller"></span><h3>Controller<a class="headerlink" href="#module-gameevents_app.controller" title="Permalink to this headline">¶</a></h3>
+<p>Controller of the application, which defines the behaviour
+of the application when called by the views. The views should
+not call the models directly, but always pass the calls through
+the controller.</p>
+<dl class="function">
+<dt id="gameevents_app.controller.client_authenticate">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">client_authenticate</code><span class="sig-paren">(</span><em>clientid</em>, <em>apikey</em>, <em>sessionid</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.client_authenticate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to authenticate a client by checking a clientid/apikey pair.
+If successful, returns an authentication token.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>clientid</strong> &#8211; </li>
+<li><strong>apikey</strong> &#8211; </li>
+<li><strong>sessionid</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">str</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Authentication token with default expiration time</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.get_client">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">get_client</code><span class="sig-paren">(</span><em>clientid</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.get_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Auxiliary function for the view, to retrieve a Client object from a clientid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>clientid</strong> &#8211; human-readable id of the client.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">gameevents_app.models.session.Client</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.get_gameevents">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">get_gameevents</code><span class="sig-paren">(</span><em>token</em>, <em>sessionid</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.get_gameevents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves existing game events related to a given sessionid. The sessionid is extracted
+from the token. If the token is admin, then a sessionid needs to be informed to retrieve
+the game events related to that sessionid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>token</strong> &#8211; authentication token</li>
+<li><strong>sessionid</strong> &#8211; Optional parameter in case the token is an admin token.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.get_sessions">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">get_sessions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.get_sessions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of existing sessions in the gameevents database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#gameevents_app.models.session.Session" title="gameevents_app.models.session.Session"><code class="xref py py-class docutils literal"><span class="pre">gameevents_app.models.session.Session</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.is_json">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">is_json</code><span class="sig-paren">(</span><em>incoming</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.is_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a given input is a list/dict or a string that could
+be interpreted as valid JSON.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>incoming</strong> &#8211; The object to be checked</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.is_session_authorized">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">is_session_authorized</code><span class="sig-paren">(</span><em>sessionid</em>, <em>client_id=False</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.is_session_authorized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the client is authorized to interact with this sessionid.</p>
+<p>TODO: Implement this function to check using timestamp and/or 
+with user profile service if the pair is valid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sessionid</strong> &#8211; </li>
+<li><strong>client_id</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.is_uuid_valid">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">is_uuid_valid</code><span class="sig-paren">(</span><em>incoming</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.is_uuid_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validates that a UUID string is in fact a valid uuid.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>incoming</strong> &#8211; The string to be checked</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.new_client">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">new_client</code><span class="sig-paren">(</span><em>clientid</em>, <em>apikey</em>, <em>role='normal'</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.new_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds new client to the database. A client is an application wishing to interact
+with the gameevents service.</p>
+<p>TODO: Protect this function so that only admins have access.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>clientid</strong> &#8211; human-readable name of the client</li>
+<li><strong>apikey</strong> &#8211; apikey (password) to authenticate the client</li>
+<li><strong>role</strong> &#8211; optional role of the client (admin/normal). Normal clients are able to read/write 
+only one sessionid. Admin clients can read many sessions.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.new_session">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">new_session</code><span class="sig-paren">(</span><em>sessionid</em>, <em>client_id</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.new_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new session in the local database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sessionid</strong> &#8211; the desired sessionid, as informed by the client.</li>
+<li><strong>client_id</strong> &#8211; the internal client_id to be associated with the session.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#gameevents_app.models.session.Session" title="gameevents_app.models.session.Session"><code class="xref py py-class docutils literal"><span class="pre">gameevents_app.models.session.Session</span></code></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.record_gameevent">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">record_gameevent</code><span class="sig-paren">(</span><em>sessionid</em>, <em>token</em>, <em>events</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.record_gameevent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the token is valid and records the game event(s) in the database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sessionid</strong> &#8211; Sessionid to which the gameevent is related</li>
+<li><strong>token</strong> &#8211; the token used to authenticate the request</li>
+<li><strong>events</strong> &#8211; JSON representation of the event</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Number of events inserted successfully in the database.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">int</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="gameevents_app.controller.token_authenticate">
+<code class="descclassname">gameevents_app.controller.</code><code class="descname">token_authenticate</code><span class="sig-paren">(</span><em>token</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.controller.token_authenticate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to authenticate a client checking the token.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>token</strong> &#8211; The token to be checked</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><cite>AuthenticationFailed</cite> if client does not exist or if token is not valid/has expired.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the client that has been authenticated</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><code class="xref py py-class docutils literal"><span class="pre">gameevents_app.models.session.Client</span></code></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="models">
+<h3>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="module-gameevents_app.models.client">
+<span id="client"></span><h4>Client<a class="headerlink" href="#module-gameevents_app.models.client" title="Permalink to this headline">¶</a></h4>
+<dl class="class">
+<dt id="gameevents_app.models.client.Client">
+<em class="property">class </em><code class="descclassname">gameevents_app.models.client.</code><code class="descname">Client</code><span class="sig-paren">(</span><em>clientid</em>, <em>apikey</em>, <em>role</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Model &#8220;clients&#8221; table in the database. Each game/application 
+using the service (i.e. a client) must have an entry in this 
+table to be able to request an authentication token.
+Initialization generates the internal ID and stores apikey hashed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>clientid</strong> (<em>str</em>) &#8211; human readable identifier of the client application</li>
+<li><strong>apikey</strong> (<em>str</em>) &#8211; desired apikey</li>
+<li><strong>role</strong> (<em>str</em>) &#8211; admin/normal</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gameevents_app.models.client.Client.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents client as dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.client.Client.as_hateoas">
+<code class="descname">as_hateoas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.as_hateoas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict representation of the session that follows hateoas representation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.client.Client.generate_auth_token">
+<code class="descname">generate_auth_token</code><span class="sig-paren">(</span><em>sessionid=False</em>, <em>expiration=600</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.generate_auth_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates an authentication token, which contains client data and the sessionid.
+A token with no associated sessionid is only allowed to admins.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sessionid</strong> &#8211; Optional sessionid to be included in the token</li>
+<li><strong>expiration</strong> &#8211; Optional custom expiration time for token, in seconds</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.client.Client.is_admin">
+<code class="descname">is_admin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.is_admin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the client is admin.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.client.Client.is_session_authorized">
+<code class="descname">is_session_authorized</code><span class="sig-paren">(</span><em>sessionid</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.is_session_authorized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the client is authorized to access this sessionid.</p>
+<p>TODO: Check authorized sessions in UserProfile service.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sessionid</strong> &#8211; Sessionid to be checked</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.client.Client.verify_apikey">
+<code class="descname">verify_apikey</code><span class="sig-paren">(</span><em>apikey</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.verify_apikey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the provided apikey matches the client&#8217;s stored apikey hashed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>apikey</strong> &#8211; Apikey to be verified against the client&#8217;s</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="gameevents_app.models.client.Client.verify_auth_token">
+<em class="property">static </em><code class="descname">verify_auth_token</code><span class="sig-paren">(</span><em>token</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.client.Client.verify_auth_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receives a token and returns the data stored in the token (id, clientid, sessionid).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>token</strong> &#8211; The token to be verified</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raise:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">AuthenticationFailed</span></code> when the token is invalid or has expired.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.client.Client.apikey_hash">
+<code class="descname">apikey_hash</code><a class="headerlink" href="#gameevents_app.models.client.Client.apikey_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>(str) hashed apikey</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.client.Client.clientid">
+<code class="descname">clientid</code><a class="headerlink" href="#gameevents_app.models.client.Client.clientid" title="Permalink to this definition">¶</a></dt>
+<dd><p>human readable identifier of the client application</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.client.Client.id">
+<code class="descname">id</code><a class="headerlink" href="#gameevents_app.models.client.Client.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>(uuid) internal ID of the client</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.client.Client.role">
+<code class="descname">role</code><a class="headerlink" href="#gameevents_app.models.client.Client.role" title="Permalink to this definition">¶</a></dt>
+<dd><p>(str) admin/normal</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.client.Client.sessions">
+<code class="descname">sessions</code><a class="headerlink" href="#gameevents_app.models.client.Client.sessions" title="Permalink to this definition">¶</a></dt>
+<dd><p>(relationship) back reference to list the sessions connected to this client</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-gameevents_app.models.session">
+<span id="sessions"></span><h4>Sessions<a class="headerlink" href="#module-gameevents_app.models.session" title="Permalink to this headline">¶</a></h4>
+<dl class="class">
+<dt id="gameevents_app.models.session.Session">
+<em class="property">class </em><code class="descclassname">gameevents_app.models.session.</code><code class="descname">Session</code><span class="sig-paren">(</span><em>sessionid</em>, <em>client_id</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.session.Session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Models &#8216;session&#8217; table in the database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sessionid</strong> &#8211; uuid coming from the userprofile service</li>
+<li><strong>client_id</strong> &#8211; internal id of the client to which this session belongs.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gameevents_app.models.session.Session.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.session.Session.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary version of the session.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.session.Session.as_hateoas">
+<code class="descname">as_hateoas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.session.Session.as_hateoas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict representation of the session that follows hateoas representation.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.session.Session.client_id">
+<code class="descname">client_id</code><a class="headerlink" href="#gameevents_app.models.session.Session.client_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Foreign key to client table (internal id of the client)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.session.Session.gameevents">
+<code class="descname">gameevents</code><a class="headerlink" href="#gameevents_app.models.session.Session.gameevents" title="Permalink to this definition">¶</a></dt>
+<dd><p>relationship to gameevents under this session</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.session.Session.id">
+<code class="descname">id</code><a class="headerlink" href="#gameevents_app.models.session.Session.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>(uuid) ID of the session</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.session.Session.timestamp">
+<code class="descname">timestamp</code><a class="headerlink" href="#gameevents_app.models.session.Session.timestamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>(datetime) when the session was registered internally (to manage expiration times)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-gameevents_app.models.gameevent">
+<span id="game-events"></span><h4>Game Events<a class="headerlink" href="#module-gameevents_app.models.gameevent" title="Permalink to this headline">¶</a></h4>
+<dl class="class">
+<dt id="gameevents_app.models.gameevent.GameEvent">
+<em class="property">class </em><code class="descclassname">gameevents_app.models.gameevent.</code><code class="descname">GameEvent</code><span class="sig-paren">(</span><em>sessionid</em>, <em>gameevent</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.gameevent.GameEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Models &#8216;gameevent&#8217; table in the database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sessionid</strong> (<em>str</em>) &#8211; sessionid to which the gameevent belongs</li>
+<li><strong>gameevent</strong> (<em>str</em>) &#8211; JSON formatted gameevent, serialized as string</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="gameevents_app.models.gameevent.GameEvent.as_dict">
+<code class="descname">as_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.gameevent.GameEvent.as_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dictionary version of game event. The gameevent itself, stored 
+in the database as serialized dictionary, is expanded in the dictionary as well.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gameevents_app.models.gameevent.GameEvent.as_hateoas">
+<code class="descname">as_hateoas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.models.gameevent.GameEvent.as_hateoas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dict representation of the game event that follows hateoas representation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.gameevent.GameEvent.gameevent">
+<code class="descname">gameevent</code><a class="headerlink" href="#gameevents_app.models.gameevent.GameEvent.gameevent" title="Permalink to this definition">¶</a></dt>
+<dd><p>long text, formatted as JSON (or serialized dict)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.gameevent.GameEvent.id">
+<code class="descname">id</code><a class="headerlink" href="#gameevents_app.models.gameevent.GameEvent.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>(uuid) internal ID of the event</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gameevents_app.models.gameevent.GameEvent.session_id">
+<code class="descname">session_id</code><a class="headerlink" href="#gameevents_app.models.gameevent.GameEvent.session_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>(uuid) foreign key to Session table</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-gameevents_app.errors">
+<span id="errors"></span><h3>Errors<a class="headerlink" href="#module-gameevents_app.errors" title="Permalink to this headline">¶</a></h3>
+<p>Creates a few custom exceptions used throughout the application.</p>
+<dl class="exception">
+<dt id="gameevents_app.errors.ClientExistsException">
+<em class="property">exception </em><code class="descclassname">gameevents_app.errors.</code><code class="descname">ClientExistsException</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.errors.ClientExistsException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Client already exists in database.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="gameevents_app.errors.InvalidGamingSessionException">
+<em class="property">exception </em><code class="descclassname">gameevents_app.errors.</code><code class="descname">InvalidGamingSessionException</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.errors.InvalidGamingSessionException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Session is invalid or does not exist.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="gameevents_app.errors.MissingHeadersException">
+<em class="property">exception </em><code class="descclassname">gameevents_app.errors.</code><code class="descname">MissingHeadersException</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.errors.MissingHeadersException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request is incomplete, with missing headers.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="gameevents_app.errors.SessionNotAuthorizedException">
+<em class="property">exception </em><code class="descclassname">gameevents_app.errors.</code><code class="descname">SessionNotAuthorizedException</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.errors.SessionNotAuthorizedException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Client is not authorized to access this session.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="gameevents_app.errors.TokenExpiredException">
+<em class="property">exception </em><code class="descclassname">gameevents_app.errors.</code><code class="descname">TokenExpiredException</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#gameevents_app.errors.TokenExpiredException" title="Permalink to this definition">¶</a></dt>
+<dd><p>The token has expired.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">gameevents 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Maira B. Carvalho.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>
