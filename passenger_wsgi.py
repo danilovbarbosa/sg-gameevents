@@ -5,12 +5,12 @@ if sys.executable != INTERP:
 	os.execl(INTERP, INTERP, *sys.argv)
 
 current_dir = os.getcwd()
-app_dir = os.path.join(current_dir, 'dashboard')
+app_dir = os.path.join(current_dir, 'gameevents')
 #sys.path.append(os.getcwd())
 sys.path.append(app_dir)
 
 
-from dashboard_app import create_app
+from gameevents_app import create_app
 
 application = create_app()
 
