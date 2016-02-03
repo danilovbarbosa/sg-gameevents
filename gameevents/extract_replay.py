@@ -183,67 +183,60 @@ USAGE
     try:
         # Setup argument parser
         #parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
-        parser = ArgumentParser(prog='PROG', usage='%(prog)s [options] path')
+        parser = ArgumentParser(prog='PROG', usage='%(prog)s path')
         #parser.add_argument("-r", "--recursive", dest="recurse", action="store_true", help="recurse into subfolders [default: %(default)s]")
         #parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         #parser.add_argument("-i", "--include", dest="include", help="only include paths matching this regex pattern. Note: exclude is given preference over include. [default: %(default)s]", metavar="RE" )
         #parser.add_argument("-e", "--exclude", dest="exclude", help="exclude paths matching this regex pattern. [default: %(default)s]", metavar="RE" )
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
         #parser.add_argument(dest="paths", help="paths to folder(s) with source file(s) [default: current]", metavar="path", nargs='+')
-        parser.add_argument('filename', type=str, help='The path to look into')
+        #parser.add_argument('filename', type=str, help='The filename to extract the replays')
+        parser.add_argument('mypath', type=str, help='The directory with the CSV files to convert. Output replay files will also be placed here.')
         # Process arguments
         args = parser.parse_args()
 
-        filename = args.filename
-#         verbose = args.verbose
-#         recurse = args.recurse
-#         inpat = args.include
-#         expat = args.exclude
-
-#         if verbose > 0:
-#             print("Verbose mode on")
-#             if recurse:
-#                 print("Recursive mode on")
-#             else:
-#                 print("Recursive mode off")
-
-#         if inpat and expat and inpat == expat:
-#             raise CLIError("include and exclude pattern are equal! Nothing will be processed.")
-
-#         for inpath in paths:
-#             ### do something with inpath ###
-#             print(inpath)
-        with open(filename) as f:
-            counter = 1
-            content = f.read()
-            #print(content)
-            content = re.sub('timestamp,action,level,update,which_lix,lix_required,lix_saved,skills_used,seconds_required,seconds_used\s','',content)
-            content = re.sub('[^,]+,(STARTGAME|ENDGAME)[,]+\s','',content)
-            p = re.compile('[^,]+,ENDLEVEL,levels/putyourlix.txt,,,,,,,\s')
-            splitcontent = p.split(content)
-#             print(len(splitcontent))
-#             print('--'*10)
-#             print(splitcontent[0])
-#             print('--'*10)
-#             print(splitcontent[12])
-            for item in splitcontent:
-                newcontent = ""
-                lines = item.split("\n")
-                #print(lines)
-                for line in lines:
-                    if "ASSIGN" in line:
-                        fields = line.split(",")
-                        newline = "! %s 0 %s %s \n" % (fields[3],fields[1],fields[4])
-                        newcontent = newcontent + newline
-                file = open(filename + ".%03d.txt" % counter, 'w' )
-                newfilecontent = re.sub('%HERE_COMES_THE_DATA%', newcontent, template)
-                file.write(newfilecontent)
-                file.close()
-                counter = counter+1
-                    
+        mypath = args.mypath
+       
+        files = [f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))]
+        #print files
+        
+        for filename in files:
             print("-------"*4)
+            print "Converting file: %s"% filename
+            with open(os.path.join(mypath, filename)) as f:
+                counter = 1
+                content = f.read()
+                #print(content)
+                content = re.sub('timestamp,action,level,update,which_lix,lix_required,lix_saved,skills_used,seconds_required,seconds_used\s','',content)
+                content = re.sub('[^,]+,(STARTGAME|ENDGAME)[,]+\s','',content)
+                p = re.compile('[^,]+,ENDLEVEL,levels/putyourlix.txt,,,,,,,\s')
+                splitcontent = p.split(content)
+    #             print(len(splitcontent))
+    #             print('--'*10)
+    #             print(splitcontent[0])
+    #             print('--'*10)
+    #             print(splitcontent[12])
+                for item in splitcontent:
+                    newcontent = ""
+                    lines = item.split("\n")
+                    #print(lines)
+                    for line in lines:
+                        if "ASSIGN" in line:
+                            fields = line.split(",")
+                            newline = "! %s 0 %s %s \n" % (fields[3],fields[1],fields[4])
+                            newcontent = newcontent + newline
+                    newfilename = filename + ".%03d.txt" % counter
+                    newfile = open(os.path.join(mypath, newfilename), 'w' )
+                    newfilecontent = re.sub('%HERE_COMES_THE_DATA%', newcontent, template)
+                    newfile.write(newfilecontent)
+                    newfile.close()
+                    counter = counter+1
+                        
+                print("-------"*4)
             
-            
+        print ""
+        print "Done!"
+        print ""
         return 0
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
