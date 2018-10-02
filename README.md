@@ -19,6 +19,10 @@ python3 -m venv venv
 
 ## Try it out
 
+Clone project (branch sg-l2ForDeaf):
+
+git clone -b sg-eventsGameDeaf https://github.com/danilovbarbosa/sg-gameevents.git
+
 Install the requirements
 
 pip install -r requirements.txt
