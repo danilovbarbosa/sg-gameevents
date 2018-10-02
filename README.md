@@ -1,16 +1,23 @@
-# sg-gameevents
+# sg-gameevents 
 A module for service-based serious games that listen for game events coming from games.
 
 ## Requires
 
 sudo apt-get install build-essential  build-dep libssl-dev libffi-dev python3-dev libxslt-dev libmysqlclient-dev python-mysqldb mysql-server
 
+## Create an environment (Linux)
 
+mkdir myproject
 
+cd myproject
+
+python3 -m venv venv
+
+## Activate the environment (First, remember to activate the virtualenv, if any)
+
+. venv/bin/activate
 
 ## Try it out
-
-First, remember to activate the virtualenv, if any.
 
 Install the requirements
 
