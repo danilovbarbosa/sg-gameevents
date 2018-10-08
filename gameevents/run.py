@@ -18,4 +18,4 @@ from gameevents_app import create_app
 # create an app instance
 app = create_app()
 
-app.run(debug=True, port=5000)
+app.run(debug=True, port=5000, use_reloader=True)
