@@ -26,10 +26,13 @@ git clone -b sg-eventsGameDeaf https://github.com/danilovbarbosa/sg-gameevents.g
 Install the requirements
 
 pip install -r requirements.txt
+
+Add file './gameevents/config.py' with configuration from: SQLALCHEMY_DATABASE_URI, SQLALCHEMY_MIGRATE_REPO, WTF_CSRF_ENABLED, SECRET_KEY, SQLALCHEMY_DATABASE_URI_TEST, TMPDIR, LOG_FILENAME, LOG_FILENAME_TEST and DEFAULT_TOKEN_DURATION  
  
 Then, create the database and the migration files:
 
 $ python gameevents/db_create.py
+
 $ python gameevents/db_migrate.py
 
 Run the server

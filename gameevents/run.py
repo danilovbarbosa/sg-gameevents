@@ -10,12 +10,18 @@ Run the application
 import os
 import sys
 
+from gameevents_app.models.client import Client
+from gameevents_app.models.gameevent import GameEvent
+from gameevents_app.models.session import Session
+
+
 sys.path.append(os.path.dirname(__name__))
 
 #from sample_application import create_app
 from gameevents_app import create_app
 
 # create an app instance
-app = create_app()
+if __name__ == "__main__":
+    app = create_app()
 
-app.run(debug=True, port=5000, use_reloader=True)
+    app.run(debug=True, port=5000, use_reloader=True)

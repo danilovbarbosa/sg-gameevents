@@ -7,7 +7,6 @@ from ..extensions import db
 import datetime
 
 
-
 #Logging
 # from logging import getLogger
 # LOG = getLogger(__name__)

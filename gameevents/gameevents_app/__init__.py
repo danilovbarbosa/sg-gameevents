@@ -8,7 +8,7 @@ import sys
 
 from flask import Flask
 
-import config
+import configurationProj as config
 
 from .extensions import db
 
@@ -28,7 +28,7 @@ def create_app(testing=False):
     app.register_blueprint(admin)
 
     # Configure app
-    app.config.from_object('config')
+    app.config.from_object('configurationProj')
     
     if testing:
         app.config['TESTING'] = True

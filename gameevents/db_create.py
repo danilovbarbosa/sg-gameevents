@@ -4,8 +4,8 @@ Created on 15 Oct 2015
 @author: mbrandaoca
 '''
 from migrate.versioning import api
-from config import SQLALCHEMY_DATABASE_URI
-from config import SQLALCHEMY_MIGRATE_REPO
+from configurationProj import SQLALCHEMY_DATABASE_URI
+from configurationProj import SQLALCHEMY_MIGRATE_REPO
 from gameevents_app import db, create_app
 import os.path
 import sys
@@ -17,6 +17,9 @@ with app.app_context():
     
     #Add the admin user
     from gameevents_app.models.client import Client
+    #####Added import models because it's necessary for the db_migrate 
+    from gameevents_app.models.gameevent import GameEvent
+    from gameevents_app.models.session import Session
     
     #Generate random password
     from random import choice

@@ -4,7 +4,6 @@ blinker==1.4
 cffi==1.2.1
 colorama==0.3.3
 coverage==4.0.1
-cryptography==1.0.2
 decorator==4.0.4
 defusedxml==0.4.1
 docutils==0.12

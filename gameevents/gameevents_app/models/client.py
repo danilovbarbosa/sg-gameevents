@@ -9,8 +9,7 @@ from flask.ext.api.exceptions import AuthenticationFailed
 from flask import current_app, url_for
 from ..extensions import db, LOG
 
-from config import DEFAULT_TOKEN_DURATION
-
+from configurationProj import DEFAULT_TOKEN_DURATION
 
 
 

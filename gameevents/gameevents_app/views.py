@@ -33,6 +33,11 @@ admin = Blueprint('admin', __name__, url_prefix='/v1/admin')
 # Handshake & help
 ######################################################
 
+@gameevents.route('/')
+def index():
+    return "Olá, você está acessando o app Gameevents.", status.HTTP_200_OK
+
+
 @gameevents.route('/version')
 def get_version():
     '''
