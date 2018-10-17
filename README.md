@@ -41,27 +41,27 @@ $ python gameevents/run.py
 
 Request an admin token:
 
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"administrator","apikey":"YOURAPIKEY"}' http://localhost:5000/gameevents/api/v1.0/token
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"administrator","apikey":"YOURAPIKEY"}' http://localhost:5000/v1/token
 
 Add an admin client to the database using the admin token:
 
-$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY", "role":"admin"}' http://localhost:5000/gameevents/api/v1.0/admin/clients
+$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY", "role":"admin"}' http://localhost:5000/v1/admin/clients
 
 Add a normal client using the admin token
 
-$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY"}' http://localhost:5000/gameevents/api/v1.0/admin/clients
+$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY"}' http://localhost:5000/v1/admin/clients
 
 
 Request a token (normal user):
 
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix","apikey":"lixapikey"}' http://localhost:5000/gameevents/api/v1.0/token
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"lix","apikey":"lixapikey"}' http://localhost:5000/v1/token
 
 
 Commit an event:
-$ curl -i  -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"timestamp":"2015-11-10T20:30:00Z","gameevent":"<test></test>"}' http://localhost:5000/gameevents/api/v1.0/commitevent
+$ curl -i  -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"timestamp":"2015-11-10T20:30:00Z","gameevent":"<test></test>"}' http://localhost:5000/v1/commitevent
 
 See events commited in this session:
-$ curl -i  -H "X-AUTH-TOKEN: YOURTOKEN" http://localhost:5000/gameevents/api/v1.0/sessions/SESSIONID/events
+$ curl -i  -H "X-AUTH-TOKEN: YOURTOKEN" http://localhost:5000/v1/sessions/SESSIONID/events
 
 See existing sessions:
-$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN"}' http://localhost:5000/gameevents/api/v1.0/sessions
+$ curl -i -H "Content-Type: application/json" -X POST -d '{"token":"YOURTOKEN"}' http://localhost:5000/v1/sessions

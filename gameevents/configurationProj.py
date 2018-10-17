@@ -15,3 +15,6 @@ LOG_FILENAME = "gameevents.log.txt"
 LOG_FILENAME_TEST = "gameevents_testing.log.txt"
 
 DEFAULT_TOKEN_DURATION = 600 #IN SECONDS
+
+DEBUB = True
+

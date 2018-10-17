@@ -63,3 +63,7 @@
 2018-10-17 11:10:13,437 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
 2018-10-17 11:10:13,805 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
 2018-10-17 11:12:05,040 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2018-10-17 16:26:45,885 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2018-10-17 16:26:46,134 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2018-10-17 20:35:10,106 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2018-10-17 20:35:10,334 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
