@@ -27,7 +27,7 @@ with app.app_context():
     chars = string.ascii_letters + string.digits
     length = 16
     randompass = ''.join(choice(chars) for _ in range(length))
-    
+
     admin = Client('administrator', randompass, "admin")
     db.session.add(admin)
     

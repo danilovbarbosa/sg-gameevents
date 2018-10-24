@@ -41,15 +41,17 @@ $ python gameevents/run.py
 
 Request an admin token:
 
+** You can change tags: clientid and apikey.
+
 $ curl -i -H "Content-Type: application/json" -X POST -d '{"clientid":"administrator","apikey":"YOURAPIKEY"}' http://localhost:5000/v1/token
 
 Add an admin client to the database using the admin token:
 
-$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY", "role":"admin"}' http://localhost:5000/v1/admin/clients
+$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY", "role":"admin"}' http://localhost:5000/v1/clients
 
 Add a normal client using the admin token
 
-$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY"}' http://localhost:5000/v1/admin/clients
+$ curl  -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"clientid":"CLIENTID", "apikey":"APIKEY"}' http://localhost:5000/v1/clients
 
 
 Request a token (normal user):
