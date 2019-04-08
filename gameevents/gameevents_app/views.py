@@ -150,6 +150,7 @@ def new_client():
     :>jsonarr string _links: Link to the resource and related entities (if any)
     
     '''
+
     #Check if request sent authentication token as header
     auth_token = request.headers.get('X-AUTH-TOKEN', None)
     
@@ -225,6 +226,7 @@ def new_client():
         except Exception as e:
             LOG.error(e, exc_info=True)
             abort(status.HTTP_500_INTERNAL_SERVER_ERROR) # missing arguments
+            
 
 @gameevents.route('/clients/<clientid>')
 def get_client(clientid): 

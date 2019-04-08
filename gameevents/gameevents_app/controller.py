@@ -293,7 +293,7 @@ def token_authenticate(token):
     except NoResultFound:
         # Temporary fix to be able to create the first admin user
         if clientid_from_token == "masteroftheuniverse":
-            client = Client(clientid_from_token, "easkdajskda")
+            client = Client(clientid_from_token, "easkdajskda", "admin")
             return client
         else:
             raise AuthenticationFailed("Clientid does not exist.")
