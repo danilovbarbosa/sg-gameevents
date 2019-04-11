@@ -73,7 +73,7 @@ $ python gameevents/db_migrate.py
 
 ### Commit an event (Timestamps are recorded in the standardized format ISO 8601):
 
-``` $ curl -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"timestamp":"DATA_DO_EVENTO: 2015-11-10T20:30:00Z","events":"{DICIONARIO_DE_EVENTOS}"}' http://localhost:5000/v1/sessions/SESSIONID/events ```
+``` $ curl -i -H "X-AUTH-TOKEN: YOURTOKEN" -H "Content-Type: application/json" -X POST -d '{"timestamp":"DATA_DO_EVENTO: 2015-11-10T20:30:00Z","events":[{"KEY": "VALUE"}]}' http://localhost:5000/v1/sessions/SESSIONID/events ```
 
 ### See events commited in this session:
 

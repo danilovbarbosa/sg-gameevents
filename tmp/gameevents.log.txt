@@ -116,3 +116,32 @@
 2019-04-05 17:26:17,838 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
 2019-04-06 06:49:29,163 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
 2019-04-06 06:49:47,646 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-08 20:52:44,640 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-08 20:53:54,751 ERROR: () [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/views.py:429]
+Traceback (most recent call last):
+  File "/home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/views.py", line 399, in commit_event
+    events = controller.record_gameevent(sessionid, auth_token, json_package["events"])
+  File "/home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/controller.py", line 171, in record_gameevent
+    raise BadRequest
+werkzeug.exceptions.BadRequest: 400: Bad Request
+2019-04-08 20:54:03,904 ERROR: () [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/views.py:429]
+Traceback (most recent call last):
+  File "/home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/views.py", line 399, in commit_event
+    events = controller.record_gameevent(sessionid, auth_token, json_package["events"])
+  File "/home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/controller.py", line 171, in record_gameevent
+    raise BadRequest
+werkzeug.exceptions.BadRequest: 400: Bad Request
+2019-04-08 20:54:47,349 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-08 20:54:58,488 ERROR: () [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/views.py:429]
+Traceback (most recent call last):
+  File "/home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/views.py", line 399, in commit_event
+    events = controller.record_gameevent(sessionid, auth_token, json_package["events"])
+  File "/home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/controller.py", line 171, in record_gameevent
+    raise BadRequest
+werkzeug.exceptions.BadRequest: 400: Bad Request
+2019-04-09 15:05:30,704 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-09 15:14:24,454 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-09 15:14:24,687 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-09 15:14:54,685 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-09 15:14:54,911 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-04-09 21:37:31,796 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
