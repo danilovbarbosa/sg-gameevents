@@ -460,9 +460,8 @@ def get_events(sessionid):
             [
               {
                 "gameevent": {
-                  "which_lix": "",
-                  "action": "STARTGAME",
-                  "timestamp": "2015-11-29T12:10:57Z"
+                  "id_questao": "",
+                  "nota": "",
                 },
                 "id": "f9a32e2f23b19d029b8faf0348a02de9",
                 "_links": [

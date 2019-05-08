@@ -145,3 +145,6 @@ werkzeug.exceptions.BadRequest: 400: Bad Request
 2019-04-09 15:14:54,685 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
 2019-04-09 15:14:54,911 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
 2019-04-09 21:37:31,796 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-05-03 11:32:18,603 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-05-03 11:32:18,828 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
+2019-05-06 20:30:01,596 INFO: Game Events Start Up... [in /home/danilo/PycharmProjects/workSpaceSG/sg-gameevents/gameevents/gameevents_app/__init__.py:57]
